@@ -1040,8 +1040,8 @@ void CellClass::ConvertIsoCoordsToScreen(int& x, int& y) {
 
 	//x = floor(tempPt_x / (CELL_PIXEL_W)) * CELL_PIXEL_W;
 	//y = floor(tempPt_y / (CELL_PIXEL_H)) * CELL_PIXEL_H;
-	x = tempPt_x - CELL_PIXEL_W;
-	y = tempPt_y - CELL_PIXEL_H;
+	x = tempPt_x;
+	y = tempPt_y;
 
 	//Console_Printf("%d %d\n", x, y);
 }

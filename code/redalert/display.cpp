@@ -3169,18 +3169,10 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 	x = Get_Mouse_X();
 	y = Get_Mouse_Y();
 
-// jmarshall
-	int tileX, tileY;
 	int screenX, screenY;
-
 	screenX = x;
 	screenY = y;
-	if (!CellClass::ScreenCoordsToIsoTile(x, y, tileX, tileY)) {
-		return 0;
-	}
-	x = tileX * CELL_PIXEL_W;
-	y = tileY * CELL_PIXEL_H;
-// jmarshall end
+	CellClass::ConvertIsoCoordsToScreen(x, y);
 
 	bool edge = (y == 0 || x == 0 || x == SeenBuff.Get_Width()-1 || y == SeenBuff.Get_Height()-1);
 	COORDINATE coord = Map.Pixel_To_Coord(x, y);
