@@ -2981,9 +2981,13 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 	*/
 	for (int air_index = 0; air_index < Aircraft.Count(); air_index++) {
 		AircraftClass * aircraft = Aircraft.Ptr(air_index);
-		COORDINATE ocoord = aircraft->Center_Coord();
-		int x = Coord_X(ocoord);
-		int y = Coord_Y(ocoord);
+		//COORDINATE ocoord = aircraft->Center_Coord();
+		int x = aircraft->GetRenderX();
+		int y = aircraft->GetRenderY();
+		// Not on screen.
+		if (x == -1 && y == -1) {
+			continue;
+		}
 
 		/*
 		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
