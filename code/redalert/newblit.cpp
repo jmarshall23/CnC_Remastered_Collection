@@ -170,6 +170,14 @@ void GL_DrawForegroundText(int color, int x, int y, char* text) {
 	ImGui::GetForegroundDrawList()->AddText(pos, ImGui::ColorConvertFloat4ToU32(ImVec4(r, g, b, 1)), text);
 }
 
+void GL_DrawForegroundText(int color, float fontsize, float r, float g, float b, int x, int y, char* text) {
+	ImVec2 pos(x, y);
+	float _r = r / 255.0f;
+	float _g = r / 255.0f;
+	float _b = r / 255.0f;
+	ImGui::GetForegroundDrawList()->AddText(NULL, fontsize, pos, ImGui::ColorConvertFloat4ToU32(ImVec4(_r, _g, _b, 1)), text);
+}
+
 void GL_DrawLine(int color, int x, int y, int dx, int dy) {
 	ImVec2 pos(x, y);
 	ImVec2 pos2(dx, dy);

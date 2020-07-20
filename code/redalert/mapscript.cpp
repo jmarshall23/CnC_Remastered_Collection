@@ -948,7 +948,7 @@ static int Script_GiveSpecialWeapon(lua_State* L) {
 
         if (house->ID == houseType || houseType == -1) {
 
-            house->SuperWeapon[weaponType].Enable(TACTION_FULL_SPECIAL, true);
+            house->SuperWeapon[weaponType].Enable(false, true, false, true);
 
             if (immediate) {
                 house->SuperWeapon[weaponType].Forced_Charge(true);

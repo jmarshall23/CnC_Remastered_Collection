@@ -44,7 +44,7 @@ class SuperClass {
 		SuperClass(int recharge, bool powered, VoxType charging=VOX_NONE, VoxType ready=VOX_NONE, VoxType impatient=VOX_NONE, VoxType suspend=VOX_NONE);
 
 		bool Suspend(bool on);
-		bool Enable(bool onetime = false, bool player=false, bool quiet=false);
+		bool Enable(bool onetime = false, bool player=false, bool quiet=false, bool skipPreReq = false);
 		void Forced_Charge(bool player=false);
 		bool AI(bool player=false);
 		bool Remove(void);
@@ -66,6 +66,7 @@ class SuperClass {
 		unsigned IsPresent:1;
 		unsigned IsOneTime:1;
 		unsigned IsReady:1;
+		unsigned IsNoPreq : 1;
 
 		CDTimerClass<FrameTimerClass> Control;
 		int OldStage;

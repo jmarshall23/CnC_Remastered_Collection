@@ -6,7 +6,7 @@ function map_briefing()
 end
 
 function map_start()
-
+	GiveSpecialWeapon(SpecialWeapons.Paratroops, Houses.USSR, 1)
 end
 
 function map_frame()
