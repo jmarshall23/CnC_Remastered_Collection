@@ -12,14 +12,14 @@ end
 
 function map_frame()
 	local numTeslaTanks = 0
-	local numRadarDomes = 0
 
-	numRadarDomes = CountBuildings(BuildingTypes.DOME, Houses.USSR)
-	if numRadarDomes == 0 then
+	-- Check to make sure there are two radar domes in the map, if not the player lost.
+	if not (CountBuildings(BuildingTypes.DOME) == 2) then
 		Lose(Houses.USSR)	
 	end
 
-	if numRadarDomes == 2 then
+	-- Check to see if the soviets have two radar domes, if so the player has won.
+	if CountBuildings(BuildingTypes.DOME, Houses.USSR) == 2 then
 		ToggleFireSale(Houses.GREECE, 1)  -- Renable the fire sale for the AI
 		Win(Houses.USSR)
 	end
