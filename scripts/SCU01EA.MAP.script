@@ -14,7 +14,7 @@ function map_frame()
 	local numTeslaTanks = 0
 	local numRadarDomes = 0
 
-	numRadarDomes = CountBuildings(BuildingTypes.DOME)
+	numRadarDomes = CountBuildings(BuildingTypes.DOME, Houses.USSR)
 	if numRadarDomes == 0 then
 		Lose(Houses.USSR)	
 	end
@@ -24,8 +24,8 @@ function map_frame()
 		Win(Houses.USSR)
 	end
 
-	numTaslaTanks = CountUnits(VehicleTypes.TESLATANK)
-	if numTaslaTanks == 0 then
+	numTeslaTanks = CountUnits(VehicleTypes.TESLATANK)
+	if numTeslaTanks == 0 then
 		PlaySpeech(11) -- Reinforcements have arrived
 		CreateVehicle(VehicleTypes.TESLATANK,Houses.USSR,5833)
 		CreateVehicle(VehicleTypes.TESLATANK,Houses.USSR,5577)
