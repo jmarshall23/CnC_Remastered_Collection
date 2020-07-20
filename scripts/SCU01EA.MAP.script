@@ -7,6 +7,7 @@ end
 
 function map_start()
 	GiveSpecialWeapon(SpecialWeapons.Paratroops, Houses.USSR, 1)
+	ToggleFireSale(Houses.GREECE, 0) -- Disable fire sale for the AI, otherwise it sells the radar dome we're trying to capture :)
 end
 
 function map_frame()
@@ -19,6 +20,7 @@ function map_frame()
 	end
 
 	if numRadarDomes == 2 then
+		ToggleFireSale(Houses.GREECE, 1)  -- Renable the fire sale for the AI
 		Win(Houses.USSR)
 	end
 

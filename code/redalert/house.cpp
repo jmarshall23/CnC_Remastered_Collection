@@ -525,6 +525,7 @@ HouseClass::HouseClass(HousesType house) :
 	RepairDelay(0),
 	BuildDelay(0),
 	ActLike(Class->House),
+	fireSaleAvailable(false),
 	IsHuman(false),
 	WasHuman(false),
 	IsPlayerControl(false),
@@ -7513,6 +7514,11 @@ bool HouseClass::Is_Hack_Prevented(RTTIType rtti, int value) const
  *=============================================================================================*/
 bool HouseClass::Fire_Sale(void)
 {
+	// Toggle the fire sale ability.
+	if(!fireSaleAvailable) {
+		return false;
+	}
+
 	if (CurBuildings > 0) {
 		for (int index = 0; index < Buildings.Count(); index++) {
 			BuildingClass * b = Buildings.Ptr(index);

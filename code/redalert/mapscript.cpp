@@ -5,6 +5,24 @@
 * Red Alert Vanilla Actions                                                                   *
 *=============================================================================================*/
 
+static int Script_ToggleFireSale(lua_State* L) {
+
+    int houseType = lua_tointeger(L, 1);
+    int fireSaleEnabled = lua_tointeger(L, 2);
+
+    if (houseType != HOUSE_NONE) {
+
+        HouseClass* this_house = HouseClass::As_Pointer((HousesType)houseType);
+
+        if (this_house != NULL) {
+            this_house->ToggleFireSaleAbility(fireSaleEnabled != 0);
+        }
+    }
+
+    return 1;
+}
+
+
 /***********************************************************************************************
  * Script_Win - The specified player wins                                                      *
  *                                                                                             *
@@ -7619,6 +7637,8 @@ bool MapScript::Init(const char* mapName) {
 /**********************************************************************************************
 * Script Globals                                                                              *
 *=============================================================================================*/
+
+    lua_register(L, "ToggleFireSale", Script_ToggleFireSale);
 
     lua_pushnumber(L, PlayerPtr->ID);                                                // Local player (house) index
     lua_setglobal(L, "_localPlayer");
