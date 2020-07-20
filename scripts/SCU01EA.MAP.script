@@ -18,11 +18,18 @@ function map_frame()
 		Lose(Houses.USSR)	
 	end
 
+	-- Ensure USSR has atleast 1 engineer, and if not ussr has two radar domes 
+	if CountInfantry(InfantryTypes.E6, Houses.USSR) == 0 then
+		if not (CountBuildings(BuildingTypes.DOME, Houses.USSR) == 2) then
+			Lose(Houses.USSR)	
+		end
+	end
+
 	-- Check to see if the soviets have two radar domes, if so the player has won.
 	if CountBuildings(BuildingTypes.DOME, Houses.USSR) == 2 then
 		ToggleFireSale(Houses.GREECE, 1)  -- Renable the fire sale for the AI
 		Win(Houses.USSR)
-	end
+	end	
 
 	numTeslaTanks = CountUnits(VehicleTypes.TESLATANK)
 	if numTeslaTanks == 0 then
