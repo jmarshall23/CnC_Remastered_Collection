@@ -3650,7 +3650,7 @@ void Disect_Scenario_Name(char const * name, int & scenario, ScenarioPlayerType 
 	/*
 	**	Fetch the scenario player (side).
 	*/
-	player = SCEN_PLAYER_GREECE;
+	player = SCEN_PLAYER_MPLAYER;
 	if (name[2] == HouseTypeClass::As_Reference(HOUSE_SPAIN).Prefix) {
 		player = SCEN_PLAYER_SPAIN;
 	}

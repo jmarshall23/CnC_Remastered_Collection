@@ -93,9 +93,12 @@ int MapEditClass::New_Scenario(void)
 				player = SCEN_PLAYER_GREECE;
 				break;
 
-			default:
 			case HOUSE_USSR:
 				player = SCEN_PLAYER_USSR;
+				break;
+
+			default:
+				player = SCEN_PLAYER_MPLAYER;
 				break;
 		}
 	}
