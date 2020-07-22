@@ -146,13 +146,6 @@ bool	bNoMovies = false;
 KeyNumType	g_globalKeyNumType = KN_NONE;
 int			g_globalKeyFlags = 0;
 
-int gameFrame = 0;
-int gameTimeResidual = 0;
-
-float com_engineHz_latched = 90.0f; // Latched version of cvar, updated between map loads
-int64_t com_engineHz_numerator = 100LL * 1000LL;
-int64_t com_engineHz_denominator = 100LL * 60LL;
-
 /****************************************
 **	Function prototypes for this module **
 *****************************************/
@@ -2108,109 +2101,59 @@ FacingType KN_To_Facing(int input)
 	return(FACING_NONE);
 }
 
-void Main_Delay()
+
+/***********************************************************************************************
+ * Sync_Delay -- Forces the game into a 15 FPS rate.                                           *
+ *                                                                                             *
+ *    This routine will wait until the timer for the current frame has expired before          *
+ *    returning. It is called at the end of every game loop in order to force the game loop    *
+ *    to run at a fixed rate.                                                                  *
+ *                                                                                             *
+ * INPUT:   none                                                                               *
+ *                                                                                             *
+ * OUTPUT:  none                                                                               *
+ *                                                                                             *
+ * WARNINGS:   This routine will delay an amount of time according to the game speed setting.  *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   01/04/1995 JLB : Created.                                                                 *
+ *   03/06/1995 JLB : Fixed.                                                                   *
+ *=============================================================================================*/
+static void Sync_Delay(void)
 {
-	//--------------------------------------------
-	// Determine how many game tics we are going to run,
-	// now that the previous frame is completely finished.
-	//
-	// It is important that any waiting on the GPU be done
-	// before this, or there will be a bad stuttering when
-	// dropping frames for performance management.
-	//--------------------------------------------
+	/*
+	**	Accumulate the number of 'spare' ticks that are frittered away here.
+	*/
+	SpareTicks += FrameTimer;
 
-	// input:
-	// thisFrameTime
-	// com_noSleep
-	// com_engineHz
-	// com_fixedTic
-	// com_deltaTimeClamp
-	// IsMultiplayer
-	//
-	// in/out state:
-	// gameFrame
-	// gameTimeResidual
-	// lastFrameTime
-	// syncNextFrame
-	//
-	// Output:
-	// numGameFrames
+	/*
+	**	Delay until the frame timer expires. This forces the game loop to be regulated to a
+	**	speed controlled by the game options slider.
+	*/
+	while (FrameTimer) {		
+		Color_Cycle();	
+		Call_Back();
 
-	// How many game frames to run
-	int numGameFrames = 0;
-
-	const int deltaTimeClamp = 50;
-
-	for (;;) {
-		const int thisFrameTime = Sys_Milliseconds();
-		static int lastFrameTime = thisFrameTime;	// initialized only the first time
-		const int deltaMilliseconds = thisFrameTime - lastFrameTime;
-		lastFrameTime = thisFrameTime;
-
-		// if there was a large gap in time since the last frame, or the frame
-		// rate is very very low, limit the number of frames we will run
-		const int clampedDeltaMilliseconds = min(deltaMilliseconds, deltaTimeClamp);
-
-		gameTimeResidual += clampedDeltaMilliseconds; // *timescale.GetFloat();
-
-		// don't run any frames when paused
-		//if (pauseGame) {
-		//	gameFrame++;
-		//	gameTimeResidual = 0;
-		//	break;
-		//}
-
-		// debug cvar to force multiple game tics
-		//if (com_fixedTic.GetInteger() > 0) {
-		//	numGameFrames = com_fixedTic.GetInteger();
-		//	gameFrame += numGameFrames;
-		//	gameTimeResidual = 0;
-		//	break;
-		//}
-
-		//if (syncNextGameFrame) {
-		//	// don't sleep at all
-		//	syncNextGameFrame = false;
-		//	gameFrame++;
-		//	numGameFrames++;
-		//	gameTimeResidual = 0;
-		//	break;
-		//}
-
-		for (;; ) {
-			// How much time to wait before running the next frame,
-			// based on com_engineHz
-			const int frameDelay = FRAME_TO_MSEC(gameFrame + 1) - FRAME_TO_MSEC(gameFrame);
-			if (gameTimeResidual < frameDelay) {
-				break;
+		if (SpecialDialog == SDLG_NONE) {
+#ifdef WIN32
+			WWMouse->Erase_Mouse(&HidPage, TRUE);
+#endif	//WIN32
+			KeyNumType input = KN_NONE;
+			int x, y;
+			Map.Input(input, x, y);
+			if (input) {
+				Keyboard_Process(input);
 			}
-			gameTimeResidual -= frameDelay;
-			gameFrame++;
-			numGameFrames++;
-			// if there is enough residual left, we may run additional frames
-		}
-
-		if (numGameFrames > 0) {
-			// ready to actually run them
-			break;
-		}
-
-		// if we are vsyncing, we always want to run at least one game
-		// frame and never sleep, which might happen due to scheduling issues
-		// if we were just looking at real time.
-		//if (com_noSleep.GetBool()) {
-		//	numGameFrames = 1;
-		//	gameFrame += numGameFrames;
-		//	gameTimeResidual = 0;
-		//	break;
-		//}
-
-		// not enough time has passed to run a frame, as might happen if
-		// we don't have vsync on, or the monitor is running at 120hz while
-		// com_engineHz is 60, so sleep a bit and check again
-		Sleep(0);
+			Map.Render();
+		}		
+	}
+	animFrameNum+=0.5f; // This is garbage and needs to be fixed with proper delta time bits!!!
+	if (!FrameTimer) {
+		Color_Cycle();
+		Call_Back();
 	}
 }
+
 
 /***********************************************************************************************
  * Main_Loop -- This is the main game loop (as a single loop).                                 *
@@ -2540,11 +2483,7 @@ Mono_Set_Cursor(0,0);
 
 	Scenario_MapScriptFrame();
 
-	Main_Delay();
-
-	SpareTicks += FrameTimer;
-	animFrameNum += 0.5f; // This is garbage and needs to be fixed with proper delta time bits!!!
-	Call_Back();
+	Sync_Delay();
 	return(!GameActive);
 }
 
