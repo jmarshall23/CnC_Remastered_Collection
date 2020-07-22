@@ -1207,4 +1207,37 @@ extern int			g_globalKeyFlags;
 extern float       animFrameNum;
 
 extern bool g_loadingPlague;
+
+extern float com_engineHz_latched;
+extern int64_t com_engineHz_numerator;
+extern int64_t com_engineHz_denominator;
+
+__forceinline float Get_com_engineHz_latched(void) {
+	return com_engineHz_latched;
+}
+
+__forceinline int64_t Get_com_engineHz_numerator(void) {
+	return com_engineHz_numerator;
+}
+
+__forceinline int64_t Get_com_engineHz_denominator(void) {
+	return com_engineHz_denominator;
+}
+
+// Returns the msec the frame starts on
+__forceinline int FRAME_TO_MSEC(int64_t frame) {
+	return (int)((frame * Get_com_engineHz_numerator()) / Get_com_engineHz_denominator());
+}
+// Rounds DOWN to the nearest frame
+__forceinline int MSEC_TO_FRAME_FLOOR(int msec) {
+	return (int)((((int64_t)msec * Get_com_engineHz_denominator()) + (Get_com_engineHz_denominator() - 1)) / Get_com_engineHz_numerator());
+}
+// Rounds UP to the nearest frame
+__forceinline int MSEC_TO_FRAME_CEIL(int msec) {
+	return (int)((((int64_t)msec * Get_com_engineHz_denominator()) + (Get_com_engineHz_numerator() - 1)) / Get_com_engineHz_numerator());
+}
+// Aligns msec so it starts on a frame bondary
+__forceinline int MSEC_ALIGN_TO_FRAME(int msec) {
+	return FRAME_TO_MSEC(MSEC_TO_FRAME_CEIL(msec));
+}
 #endif

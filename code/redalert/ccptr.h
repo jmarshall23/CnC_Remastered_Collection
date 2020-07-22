@@ -49,16 +49,16 @@ class CCPtr
 		CCPtr(NoInitClass const & ) {};
 		CCPtr(T * ptr);
 
-		operator T * (void) const {
+		__forceinline operator T * (void) const {
 			if (ID == -1) return(NULL);
 			assert(Heap != NULL && ID < Heap->Length());
 			return((T*) (*Heap)[ID]);
 		}
-		T & operator * (void) const {
+		__forceinline T & operator * (void) const {
 			assert(Heap != NULL && ID < Heap->Length());
 			return(*(T*)(*Heap)[ID]);
 		}
-		T * operator -> (void) const {
+		__forceinline T * operator -> (void) const {
 			if (ID == -1) return(NULL);
 			assert(Heap != NULL && ID < Heap->Length());
 			return((T*) (*Heap)[ID]);
