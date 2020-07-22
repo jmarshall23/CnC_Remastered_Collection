@@ -1241,11 +1241,10 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
 	int neighborCellX = weights[crude].x * (distance * 0.4f);
 	int neighbotCellY = weights[crude].y * (distance * 0.4f);
 	DisplayTacticalCoord newCoord = TacticalCoord;
-	newCoord.x += Pixel_To_Lepton(neighborCellX);
-	newCoord.y += Pixel_To_Lepton(neighbotCellY);
+	newCoord.AddPixelXY(neighborCellX, neighbotCellY);
 	
-	int sx = Lepton_To_Pixel(newCoord.x);
-	int sy = Lepton_To_Pixel(newCoord.y);
+	int sx = Lepton_To_Pixel(newCoord.GetX());
+	int sy = Lepton_To_Pixel(newCoord.GetY());
 	CellClass::ConvertCoordsToIsometric(sx, sy);
 	sy += (ScreenWidth / 4);
 	sy += ScreenHeight / 2;
