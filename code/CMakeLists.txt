@@ -8,6 +8,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+set(src_launcher
+	./launcher/launcher_main.cpp
+)
+
 set(src_io
 	./redalert/io/userinput.cpp
 	./redalert/io/userinput.h
@@ -732,15 +736,20 @@ if (UNIX)
 add_definitions(-D RA_AF -DCHEAT_KEYS -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DSCENARIO_EDITOR -DTRUE_FALSE_DEFINED -DENGLISH -D_USRDLL -DREDALERT_EXPORTS)
 endif(UNIX)
 
-add_executable(RedAlert ${src_io} ${src_win32lib} ${src_redalert} ${src_external} "redalert/light.cpp" "redalert/briefing.cpp")
+add_library(RedAlertDLL SHARED ${src_io} ${src_win32lib} ${src_redalert} ${src_external} "redalert/light.cpp" "redalert/briefing.cpp")
 
 if (MSVC)
-set_target_properties(RedAlert PROPERTIES OUTPUT_NAME "RedAlert" LINK_FLAGS "/PDB:\"RedAlert.pdb\" /SUBSYSTEM:WINDOWS" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../" )
-target_link_libraries(RedAlert "opengl32.lib" "winmm.lib" "Ws2_32.lib" "${CMAKE_SOURCE_DIR}/external/devil/ilu.lib" "${CMAKE_SOURCE_DIR}/external/devil/DevIL.lib" "${CMAKE_SOURCE_DIR}/external/sdl2/lib/x64/SDL2.lib" "${CMAKE_SOURCE_DIR}/external/openal/out/build/x64-Release/OpenAL32.lib" ${FFmpeg_LIBRARIES})
+set_target_properties(RedAlertDLL PROPERTIES OUTPUT_NAME "RedAlertx64" LINK_FLAGS "/PDB:\"RedAlertx64.pdb\" /SUBSYSTEM:WINDOWS /DEF:${CMAKE_CURRENT_SOURCE_DIR}/exports.def" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../" )
+target_link_libraries(RedAlertDLL "opengl32.lib" "winmm.lib" "Ws2_32.lib" "${CMAKE_SOURCE_DIR}/external/devil/ilu.lib" "${CMAKE_SOURCE_DIR}/external/devil/DevIL.lib" "${CMAKE_SOURCE_DIR}/external/sdl2/lib/x64/SDL2.lib" "${CMAKE_SOURCE_DIR}/external/openal/out/build/x64-Release/OpenAL32.lib" ${FFmpeg_LIBRARIES})
+
+add_executable(Launcher ${src_launcher})
+target_link_libraries(Launcher RedAlertDLL)
+set_target_properties(Launcher PROPERTIES OUTPUT_NAME "RedAlert" LINK_FLAGS "/SUBSYSTEM:WINDOWS /PDB:\"RedAlert.pdb\"")
+
 endif(MSVC)
 
 if (UNIX)
 set_target_properties(RedAlert PROPERTIES OUTPUT_NAME "RedAlert"  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/.." )
 endif(UNIX)
 
-target_include_directories(RedAlert PRIVATE ./external/ffmpeg-win64/include/;./external/xml/;./external/devil/;./external/;./redalert/win32lib;./external/lua/;./external/imgui;./external/dxsdk/Include;./external/ffmpeg-win32/include;./external/sdl2/include;./win32lib;./external/openal/include)
+target_include_directories(RedAlertDLL PRIVATE ./external/ffmpeg-win64/include/;./external/xml/;./external/devil/;./external/;./redalert/win32lib;./external/lua/;./external/imgui;./external/dxsdk/Include;./external/ffmpeg-win32/include;./external/sdl2/include;./win32lib;./external/openal/include)

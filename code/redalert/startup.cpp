@@ -174,7 +174,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, unsigned int fdwReason, void *lpvReserve
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
 void Reallocate_Big_Shape_Buffer(void);
-int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
+int PASCAL CnCMain( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
 {
 #ifdef WIN32
 
