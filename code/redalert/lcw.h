@@ -41,7 +41,6 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long length=0);
 
 extern "C" {
 	int __cdecl LCW_Comp(void const * source, void * dest, int length);
-	int __cdecl LCW_Uncomp_CS(const void* src, void* dst, unsigned int bytes);
 }
 
 #endif

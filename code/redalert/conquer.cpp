@@ -3713,73 +3713,58 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 #endif
 
 
-#ifdef WIN32
+
 		/*
 		** In WIn95, build shape returns a pointer to the shape not its size
 		*/
 
 		Image_t* shape_image = NULL;
-		shape_pointer = Build_Frame(shapefile, shapenum, _ShapeBuffer);
+		char tmp[512];
+		sprintf(tmp, "s_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
+		shape_image = Find_Image(tmp);
 
-		if (shape_pointer) {
-			//GraphicViewPortClass draw_window(LogicPage->Get_Graphic_Buffer(),
-			//											WindowList[window][WINDOWX] + LogicPage->Get_XPos(),
-			//											WindowList[window][WINDOWY] + LogicPage->Get_YPos(),
-			//											WindowList[window][WINDOWWIDTH],
-			//											WindowList[window][WINDOWHEIGHT]);
-			unsigned char * buffer = (unsigned char *) shape_pointer;	//Get_Shape_Header_Data((void*)shape_pointer);
+		if (!shape_image)
+		{
+			shape_pointer = Build_Frame(shapefile, shapenum, _ShapeBuffer);
 
-#else	//WIN32
-		if ( Build_Frame(shapefile, shapenum, _ShapeBuffer ) <= (unsigned long)_ShapeBufferSize) {
-			GraphicViewPortClass draw_window(LogicPage,
-														WindowList[window][WINDOWX],
-														WindowList[window][WINDOWY],
-														WindowList[window][WINDOWWIDTH],
-														WindowList[window][WINDOWHEIGHT]);
-			unsigned char * buffer = (unsigned char *)_ShapeBuffer;
-#endif	//WIN32
+			if (shape_pointer) {
+				//GraphicViewPortClass draw_window(LogicPage->Get_Graphic_Buffer(),
+				//											WindowList[window][WINDOWX] + LogicPage->Get_XPos(),
+				//											WindowList[window][WINDOWY] + LogicPage->Get_YPos(),
+				//											WindowList[window][WINDOWWIDTH],
+				//											WindowList[window][WINDOWHEIGHT]);
+				unsigned char* buffer = (unsigned char*)shape_pointer;	//Get_Shape_Header_Data((void*)shape_pointer);
 
-			UseOldShapeDraw = false;
-			/*
-			**	Rotation handler.
-			*/
-			if (rotation != DIR_N) {
-
+				UseOldShapeDraw = false;
 				/*
-				** Get the raw shape data without the new header and flag to use the old shape drawing
+				**	Rotation handler.
 				*/
-				UseOldShapeDraw = true;
-#ifdef WIN32
-				buffer = (unsigned char *) Get_Shape_Header_Data((void*)shape_pointer);
-#endif
+				if (rotation != DIR_N) {
 
-				if (Debug_Rotate) {
-#if (0)//PG
-					GraphicBufferClass src(width, height, buffer);
-					width *= 2;
-					height *= 2;
-					memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
-					GraphicBufferClass dst(width, height, _xbuffer);
-					Rotate_Bitmap(&src, &dst, rotation);
-					buffer = _xbuffer;
-#endif
-				} else {
+					/*
+					** Get the raw shape data without the new header and flag to use the old shape drawing
+					*/
+					UseOldShapeDraw = true;
 
-					BitmapClass bm(width, height, buffer);
-					width *= 2;
-					height *= 2;
-					memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
-					GraphicBufferClass gb(width, height, _xbuffer);
-					TPoint2D pt(width/2, height/2);
+					buffer = (unsigned char*)Get_Shape_Header_Data((void*)shape_pointer);
 
-					gb.Scale_Rotate(bm, pt, 0x0100, (256-(rotation-64)));
-					buffer = _xbuffer;
+
+					if (Debug_Rotate) {
+
+					}
+					else {
+
+						BitmapClass bm(width, height, buffer);
+						width *= 2;
+						height *= 2;
+						memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
+						GraphicBufferClass gb(width, height, _xbuffer);
+						TPoint2D pt(width / 2, height / 2);
+
+						gb.Scale_Rotate(bm, pt, 0x0100, (256 - (rotation - 64)));
+						buffer = _xbuffer;
+					}
 				}
-			}
-
-			{
-				char tmp[512];
-				sprintf(tmp, "s_%d_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
 
 				if (flags & SHAPE_FADING) {
 					shape_image = Image_CreateImageFrom8Bit(tmp, width, height, (unsigned char*)buffer, (unsigned char*)fadingdata);
@@ -3788,34 +3773,34 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 					shape_image = Image_CreateImageFrom8Bit(tmp, width, height, (unsigned char*)buffer, NULL);
 				}
 			}
+		}
 
+		if (shape_image)
+		{
 			/*
 			**	Special shadow drawing code (used for aircraft and bullets).
 			*/
-			if ((flags & (SHAPE_FADING|SHAPE_PREDATOR)) == (SHAPE_FADING|SHAPE_PREDATOR)) {
-				flags = flags & ~(SHAPE_FADING|SHAPE_PREDATOR);
+			if ((flags & (SHAPE_FADING | SHAPE_PREDATOR)) == (SHAPE_FADING | SHAPE_PREDATOR)) {
+				flags = flags & ~(SHAPE_FADING | SHAPE_PREDATOR);
 				flags = flags | SHAPE_GHOST;
 				ghostdata = DisplayClass::SpecialGhost;
 			}
 
 			predoffset = Frame;
 
-			//if (x > ( WindowList[window][WINDOWWIDTH] << 2)) {
-			//	predoffset = -predoffset;
-			//}
-
-			{
-				if ((flags & (SHAPE_GHOST|SHAPE_FADING)) == (SHAPE_GHOST|SHAPE_FADING)) {
-					Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, fadingdata, 1, predoffset);
-				} else {
-					if (flags & SHAPE_FADING) {
-						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, fadingdata, 1, predoffset);
-					} else {
-						if (flags & SHAPE_PREDATOR) {
-							Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, predoffset);
-						} else {
-							Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, predoffset);
-						}
+			if ((flags & (SHAPE_GHOST | SHAPE_FADING)) == (SHAPE_GHOST | SHAPE_FADING)) {
+				Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, fadingdata, 1, predoffset);
+			}
+			else {
+				if (flags & SHAPE_FADING) {
+					Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, fadingdata, 1, predoffset);
+				}
+				else {
+					if (flags & SHAPE_PREDATOR) {
+						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, predoffset);
+					}
+					else {
+						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, predoffset);
 					}
 				}
 			}

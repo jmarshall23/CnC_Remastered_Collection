@@ -1138,7 +1138,7 @@ void* Build_Frame2(void* shape, uint16_t frame, void* buffer)
             frame_data = &shape_data[(le32toh(offset_buff[0]) & 0xFFFFFF) + 768];
         }
 
-        frame_size = LCW_Uncomp_CS(frame_data, buffer, frame_size);
+        frame_size = LCW_Uncomp(frame_data, buffer, frame_size);
     }
     else {
         // captainslog_debug("Decoding XOR frame.");
