@@ -1207,4 +1207,5 @@ extern int			g_globalKeyFlags;
 extern float       animFrameNum;
 
 extern bool g_loadingPlague;
+extern int	g_startFrameTime;
 #endif

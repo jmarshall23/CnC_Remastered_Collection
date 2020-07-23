@@ -178,6 +178,10 @@ class CellClass
 #endif
 
 
+		int visibleFrame;
+		int x_world_pos;
+		int y_world_pos;
+
 		/*
 		**	Per-player view of whether a cell is mapped. One bit for each house type. ST - 8/2/2019 3:00PM
 		*/

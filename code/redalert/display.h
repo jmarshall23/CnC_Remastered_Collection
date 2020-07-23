@@ -254,6 +254,7 @@ class DisplayClass: public MapClass
 		SpecialWeaponType IsTargettingMode;
 
 	protected:
+		void CacheVisibleCells(void);
 
 		/*
 		**	If it is currently in rubber band mode (multi unit selection), then this

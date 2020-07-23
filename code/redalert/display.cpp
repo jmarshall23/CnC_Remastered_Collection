@@ -1884,6 +1884,39 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 	return(*this)[cell].Cell_Object(x, y);
 }
 
+void DisplayClass::CacheVisibleCells(void) {
+	IsShadowPresent = false;
+	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
+		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
+			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
+			CELL cell = Coord_Cell(coord);
+			coord = Coord_Whole(Cell_Coord(cell));
+
+			if (Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)
+				continue;
+
+			/*
+			**	Only cells flagged to be redraw are examined.
+			*/
+			int xpixel;
+			int ypixel;
+
+			if (Coord_To_Pixel(coord, xpixel, ypixel)) {
+				CellClass* cellptr = &(*this)[coord];
+				if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {					
+					cellptr->visibleFrame = g_startFrameTime;
+					cellptr->x_world_pos = xpixel;
+					cellptr->y_world_pos = ypixel;
+				}
+
+				if (!cellptr->Is_Visible(PlayerPtr) && !Debug_Unshroud) {	
+					IsShadowPresent = true;
+				}
+			}
+		}
+	}				
+}
+
 
 /***********************************************************************************************
  * DisplayClass::Draw_It -- Draws the tactical map.                                            *
@@ -1979,268 +2012,20 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 		}
 
 		/*
-		**	Check for a movement of the tactical map. If there has been some
-		**	movement, then part (or all) of the icons must be redrawn.
+		** Record new map position for future reference.
 		*/
-		if (Lepton_To_Pixel(Coord_X(DesiredTacticalCoord)) != Lepton_To_Pixel(Coord_X(TacticalCoord)) ||
-			Lepton_To_Pixel(Coord_Y(DesiredTacticalCoord)) != Lepton_To_Pixel(Coord_Y(TacticalCoord))) {
-
-			int xmod = Lepton_To_Pixel(Coord_X(DesiredTacticalCoord));
-			int ymod = Lepton_To_Pixel(Coord_Y(DesiredTacticalCoord));
-
-			int oldx = Lepton_To_Pixel(Coord_X(TacticalCoord))-xmod;		// Old relative offset.
-			int oldy = Lepton_To_Pixel(Coord_Y(TacticalCoord))-ymod;
-
-			int oldw = Lepton_To_Pixel(TacLeptonWidth)-ABS(oldx);			// Replicable width.
-			int oldh = Lepton_To_Pixel(TacLeptonHeight)-ABS(oldy);		// Replicable height.
-
-			if (oldw < 1) forced = true;
-			if (oldh < 1) forced = true;
-
-
-#ifdef WIN32		//For WIN32 only redraw the edges of the map that move into view
-
-			/*
-			** Work out which map edges need to be redrawn
-			*/
-			BOOL redraw_right = (oldx < 0) ? true : false;		//Right hand edge
-			BOOL redraw_left  = (oldx > 0) ? true : false;		//Left hand edge
-			BOOL redraw_bottom= (oldy < 0) ? true : false;		//Bottom edge
-			BOOL redraw_top	= (oldy > 0) ? true : false;		//Top edge
-
-			/*
-			**	Blit any replicable block to avoid having to drawstamp.
-			*/
-			if (!forced && (oldw != Lepton_To_Pixel(TacLeptonWidth) || oldh != Lepton_To_Pixel(TacLeptonHeight))) {
-				Set_Cursor_Pos(-1);
-
-				/*
-				** If hid page is in video memory then blit from the seen page to avoid blitting
-				**  an overlapped region.
-				*/
-// jmarshall - removed
-//				if (HidPage.Get_IsDirectDraw()) {
-//					Hide_Mouse();
-//							SeenBuff.Blit(HidPage,
-//									((oldx < 0) ? -oldx : 0) +TacPixelX,
-//									((oldy < 0) ? -oldy : 0) +TacPixelY,
-//									((oldx < 0) ? 0 : oldx) +TacPixelX,
-//									((oldy < 0) ? 0 : oldy) +TacPixelY,
-//									oldw,
-//									oldh);
-//					Show_Mouse();
-//				} else {
-//					HidPage.Blit(HidPage,
-//									((oldx < 0) ? -oldx : 0) +TacPixelX,
-//									((oldy < 0) ? -oldy : 0) +TacPixelY,
-//									((oldx < 0) ? 0 : oldx) +TacPixelX,
-//									((oldy < 0) ? 0 : oldy) +TacPixelY,
-//									oldw,
-//									oldh);
-//				}
-// jmarshall - removed
-			} else {
-				forced = true;
-			}
-
-			if (oldx < 0) oldx = 0;
-			if (oldy < 0) oldy = 0;
-
-			/*
-			** Record new map position for future reference.
-			*/
-			ScenarioInit++;
-			Set_Tactical_Position(DesiredTacticalCoord);
-			ScenarioInit--;
-
-			if (!forced) {
-
-				/*
-				**
-				**	Set the 'redraw stamp' bit for any cells that could not be copied.
-				**
-				*/
-				int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-				int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-				oldw -= 24;
-				oldh -= 24;
-
-				if (abs(oldx) < 0x25 && abs(oldy) < 0x25) {
-
-					/*
-					** The width of the area we redraw depends on the scroll speed
-					*/
-					int extra_x = (abs(oldx)>=16) ? 2 : 1;
-					int extra_y = (abs(oldy)>=16) ? 2 : 1;
-
-					/*
-					** Flag the cells across the top of the visible area if required
-					*/
-					if (redraw_top) {
-						for (y = starty; y <= starty+CELL_PIXEL_H*extra_y; y += CELL_PIXEL_H) {
-							for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells across the bottom of the visible area if required
-					*/
-					if (redraw_bottom) {
-						for (y = Lepton_To_Pixel(TacLeptonHeight)-CELL_PIXEL_H*(1+extra_y); y <= Lepton_To_Pixel(TacLeptonHeight)+CELL_PIXEL_H*3; y += CELL_PIXEL_H) {
-							for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells down the left of the visible area if required
-					*/
-					if (redraw_left) {
-						for (x = startx; x <= startx + CELL_PIXEL_W*extra_x; x += CELL_PIXEL_W) {
-							for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells down the right of the visible area if required
-					*/
-					if (redraw_right) {
-						for (x = Lepton_To_Pixel(TacLeptonWidth)-CELL_PIXEL_W*(extra_x+1); x <= Lepton_To_Pixel(TacLeptonWidth)+CELL_PIXEL_W*3; x += CELL_PIXEL_W) {
-							for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-				} else {
-
-					/*
-					**	Set the 'redraw stamp' bit for any cells that could not be copied.
-					*/
-					int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-					int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-					oldw -= 24;
-					oldh -= 24;
-					for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-						for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-							if (x <= oldx || x >= oldx+oldw || y <= oldy || y >= oldy+oldh) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) {
-									(*this)[c].Redraw_Objects(true);
-								}
-							}
-						}
-					}
-				}
-			}
-
-		} else {
-
-			/*
-			**	Set the tactical coordinate just in case the desired tactical has changed but
-			**	not enough to result in any visible map change. This is likely to occur with very
-			**	slow scroll rates.
-			*/
-			ScenarioInit++;
-			if (DesiredTacticalCoord != TacticalCoord) {
-				Set_Tactical_Position(DesiredTacticalCoord);
-			}
-			ScenarioInit--;
-		}
-
-
-#else	//WIN32
-			/*
-			**	Blit any replicable block to avoid having to drawstamp.
-			*/
-			if (!forced && (oldw != Lepton_To_Pixel(TacLeptonWidth) || oldh != Lepton_To_Pixel(TacLeptonHeight))) {
-				Set_Cursor_Pos(-1);
-
-				HidPage.Blit(HidPage,
-								((oldx < 0) ? -oldx : 0) +TacPixelX,
-								((oldy < 0) ? -oldy : 0) +TacPixelY,
-								((oldx < 0) ? 0 : oldx) +TacPixelX,
-								((oldy < 0) ? 0 : oldy) +TacPixelY,
-								oldw,
-								oldh);
-			} else {
-				forced = true;
-			}
-
-			if (oldx < 0) oldx = 0;
-			if (oldy < 0) oldy = 0;
-
-			/*
-			** Record new map position for future reference.
-			*/
-			ScenarioInit++;
-			Set_Tactical_Position(DesiredTacticalCoord);
-			ScenarioInit--;
-
-			if (!forced) {
-
-				/*
-				**	Set the 'redraw stamp' bit for any cells that could not be copied.
-				*/
-				int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-				int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-				oldw -= 24;
-				oldh -= 24;
-				for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-					for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-						if (x <= oldx || x >= oldx+oldw || y <= oldy || y >= oldy+oldh) {
-							CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-										Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-							if (c > 0) {
-								(*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-				}
-			}
-
-		} else {
-
-			/*
-			**	Set the tactical coordinate just in case the desired tactical has changed but
-			**	not enough to result in any visible map change. This is likely to occur with very
-			**	slow scroll rates.
-			*/
-			ScenarioInit++;
-			if (DesiredTacticalCoord != TacticalCoord) {
-				Set_Tactical_Position(DesiredTacticalCoord);
-			}
-			ScenarioInit--;
-		}
-#endif
+		ScenarioInit++;
+		Set_Tactical_Position(DesiredTacticalCoord);
+		ScenarioInit--;
 
 		/*
 		**	If the entire tactical map is forced to be redrawn, then set all the redraw flags
 		**	and let the normal processing take care of the rest.
 		*/
-		if (forced) {
-			CellRedraw.Set();
-		}
+		CellRedraw.Set();
+
+		// Cache Visible cells 
+		CacheVisibleCells();
 
 		/*
 		**	The first order of business is to redraw all the underlying icons that are
@@ -2392,45 +2177,17 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
  *=============================================================================================*/
 void DisplayClass::Redraw_Icons(void)
 {
-	IsShadowPresent = false;
 	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
 		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
 			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
 			CELL cell = Coord_Cell(coord);
 			coord = Coord_Whole(Cell_Coord(cell));
 
-			if (Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)
+			CellClass* cellptr = &(*this)[coord];
+			if (cellptr->visibleFrame != g_startFrameTime)
 				continue;
 
-			/*
-			**	Only cells flagged to be redraw are examined.
-			*/
-			{
-				int xpixel;
-				int ypixel;
-
-				if (Coord_To_Pixel(coord, xpixel, ypixel)) {
-					CellClass * cellptr = &(*this)[coord];
-
-					/*
-					**	If there is a portion of the underlying icon that could be visible,
-					**	then draw it.  Also draw the cell if the shroud is off.
-					*/
-					//if (cellptr->IsMapped || Debug_Unshroud) {
-					if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {		// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						cellptr->Draw_It(xpixel, ypixel);
-					}
-
-					/*
-					**	If any cell is not fully mapped, then flag it so that the shadow drawing
-					**	process will occur.  Only draw the shadow if Debug_Unshroud is false.
-					*/
-					//if (!cellptr->IsVisible && !Debug_Unshroud) {
-					if (!cellptr->Is_Visible(PlayerPtr) && !Debug_Unshroud) {	// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						IsShadowPresent = true;
-					}
-				}
-			}
+			cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos);
 		}
 	}
 }
@@ -2445,29 +2202,11 @@ void DisplayClass::Redraw_OIcons(void)
 			CELL cell = Coord_Cell(coord);
 			coord = Coord_Whole(Cell_Coord(cell));
 
-			if (Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)
-				continue;			
+			CellClass* cellptr = &(*this)[coord];
+			if (cellptr->visibleFrame != g_startFrameTime)
+				continue;
 
-			/*
-			**	Only cells flagged to be redraw are examined.
-			*/
-			if (In_View(cell) && Is_Cell_Flagged(cell)) {
-				int xpixel;
-				int ypixel;
-
-				if (Coord_To_Pixel(coord, xpixel, ypixel)) {
-					CellClass * cellptr = &(*this)[coord];
-
-					/*
-					**	If there is a portion of the underlying icon that could be visible,
-					**	then draw it.  Also draw the cell if the shroud is off.
-					*/
-					//if (cellptr->IsMapped || Debug_Unshroud) {
-					if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {		// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						cellptr->Draw_It(xpixel, ypixel, true);
-					}
-				}
-			}			
+			cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos, true);
 		}
 	}
 }

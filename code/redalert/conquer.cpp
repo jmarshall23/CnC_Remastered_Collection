@@ -146,6 +146,8 @@ bool	bNoMovies = false;
 KeyNumType	g_globalKeyNumType = KN_NONE;
 int			g_globalKeyFlags = 0;
 
+int			g_startFrameTime = 0;
+
 /****************************************
 **	Function prototypes for this module **
 *****************************************/
@@ -291,7 +293,9 @@ void Main_Game(int argc, char * argv[])
 		/*
 		**	Scenario-editor version of main-loop processing
 		*/
-		for (;;) {
+		while(true) {
+			g_startFrameTime = Sys_Milliseconds();
+
 			/*
 			**	Non-scenario-editor-mode: call the game's main loop
 			*/
