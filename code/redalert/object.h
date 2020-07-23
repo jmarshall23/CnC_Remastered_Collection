@@ -55,6 +55,8 @@ class TriggerClass;
 class ObjectClass : public AbstractClass
 {
 	public:
+		int lastRenderTime;
+
 		/*
 		**	The object can be in one of two states -- placed down on the map, or not. If the
 		**	object is placed down on the map, then this flag will be true.

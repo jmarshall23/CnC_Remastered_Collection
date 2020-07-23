@@ -84,10 +84,8 @@
 */
 #include "SidebarGlyphx.h"
 
-std::vector<const ObjectClass*> renderedFrameObjects;
-
 bool HasRenderedObject(const ObjectClass* technoClass) {
-	return std::find(renderedFrameObjects.begin(), renderedFrameObjects.end(), technoClass) != renderedFrameObjects.end();
+	return technoClass->lastRenderTime == g_startFrameTime;
 }
 
 /***********************************************************************************************
@@ -1445,7 +1443,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 				continue;
 			}
 
-			renderedFrameObjects.push_back(object);
+			object->lastRenderTime = g_startFrameTime;
 			int xx,yy;
 			if (object->IsToDisplay && (!object->Is_Techno() || ((TechnoClass *)object)->Visual_Character() == VISUAL_NORMAL) && Map.Coord_To_Pixel(object->Render_Coord(), xx, yy)) {				
 				{

@@ -81,8 +81,6 @@ SDL_GLContext game_context;
 int OverlappedVideoBlits = 0;
 float animFrameNum = 0;
 
-extern std::vector<const ObjectClass*> renderedFrameObjects;
-
 bool renderConsole = false;
 
 void (*Misc_Focus_Loss_Function)(void) = nullptr;
@@ -606,9 +604,7 @@ void ImGui_NewFrame(void) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui::NewFrame(show_oldframebuffer);
 
-	ImGui_ImplSDL2_NewFrame(game_window);
-
-	renderedFrameObjects.clear();
+	ImGui_ImplSDL2_NewFrame(game_window);	
 }
 
 void Device_Present(void) {	
