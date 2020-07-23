@@ -2132,20 +2132,21 @@ static void Sync_Delay(void)
 	*/
 	while (FrameTimer) {		
 		Color_Cycle();	
-		Call_Back();
-
-		if (SpecialDialog == SDLG_NONE) {
-#ifdef WIN32
-			WWMouse->Erase_Mouse(&HidPage, TRUE);
-#endif	//WIN32
-			KeyNumType input = KN_NONE;
-			int x, y;
-			Map.Input(input, x, y);
-			if (input) {
-				Keyboard_Process(input);
-			}
-			Map.Render();
-		}		
+//		Call_Back();
+//
+//		if (SpecialDialog == SDLG_NONE) {
+//#ifdef WIN32
+//			WWMouse->Erase_Mouse(&HidPage, TRUE);
+//#endif	//WIN32
+//			KeyNumType input = KN_NONE;
+//			int x, y;
+//			Map.Input(input, x, y);
+//			if (input) {
+//				Keyboard_Process(input);
+//			}
+//			Map.Render();
+//		}		
+		SDL_PumpEvents();
 	}
 	animFrameNum+=0.5f; // This is garbage and needs to be fixed with proper delta time bits!!!
 	if (!FrameTimer) {
