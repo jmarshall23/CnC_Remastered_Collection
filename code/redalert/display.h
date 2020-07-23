@@ -61,6 +61,13 @@ struct Image_t;
 
 extern COORDINATE Coord_Add(COORDINATE coord1, COORDINATE coord2);
 
+struct CellCache_t {
+	CellCache_t() {
+		ptr = NULL;
+	}
+	CellClass* ptr;
+};
+
 
 class DisplayClass: public MapClass
 {
@@ -255,6 +262,8 @@ class DisplayClass: public MapClass
 
 	protected:
 		void CacheVisibleCells(void);
+		CellCache_t* cellDisplayCache;
+		int numCachedDisplayCells;
 
 		/*
 		**	If it is currently in rubber band mode (multi unit selection), then this

@@ -205,6 +205,8 @@ DisplayClass::DisplayClass(void) :
 {
 	ShadowShapes = 0;
 	TransIconset = 0;
+	cellDisplayCache = NULL;
+	numCachedDisplayCells = 0;
 
 	Set_View_Dimensions(0, 8 * RESFACTOR, ScreenWidth, ScreenHeight);
 }
@@ -595,6 +597,11 @@ void DisplayClass::Set_View_Dimensions(int x, int y, int width, int height)
 		TacViewportRect.X2 += (MapCellX * CELL_PIXEL_W);
 		TacViewportRect.Y2 += (MapCellY * CELL_PIXEL_H);
 	}
+
+	if (cellDisplayCache == NULL) {
+		cellDisplayCache = new CellCache_t[MAP_CELL_W * MAP_CELL_H];
+	}
+	numCachedDisplayCells = 0;
 
 	/*
 	**	Adjust the tactical cell if it is now in an invalid position
@@ -1886,6 +1893,7 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 
 void DisplayClass::CacheVisibleCells(void) {
 	IsShadowPresent = false;
+	numCachedDisplayCells = 0;
 	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
 		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
 			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
@@ -1896,22 +1904,22 @@ void DisplayClass::CacheVisibleCells(void) {
 				continue;
 
 			/*
-			**	Only cells flagged to be redraw are examined.
+			**	Only cells flagged to be redraw are examined.  
 			*/
 			int xpixel;
 			int ypixel;
 
 			if (Coord_To_Pixel(coord, xpixel, ypixel)) {
 				CellClass* cellptr = &(*this)[coord];
-				if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {					
+				if ((cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)) || Debug_Unshroud) {
 					cellptr->visibleFrame = g_startFrameTime;
 					cellptr->x_world_pos = xpixel;
 					cellptr->y_world_pos = ypixel;
+					cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
 				}
-
-				if (!cellptr->Is_Visible(PlayerPtr) && !Debug_Unshroud) {	
+				else {
 					IsShadowPresent = true;
-				}
+				}				
 			}
 		}
 	}				
@@ -2177,18 +2185,9 @@ void DisplayClass::CacheVisibleCells(void) {
  *=============================================================================================*/
 void DisplayClass::Redraw_Icons(void)
 {
-	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
-		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
-			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
-			CELL cell = Coord_Cell(coord);
-			coord = Coord_Whole(Cell_Coord(cell));
-
-			CellClass* cellptr = &(*this)[coord];
-			if (cellptr->visibleFrame != g_startFrameTime)
-				continue;
-
-			cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos);
-		}
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos);
 	}
 }
 
@@ -2196,18 +2195,9 @@ void DisplayClass::Redraw_Icons(void)
 #ifdef SORTDRAW
 void DisplayClass::Redraw_OIcons(void)
 {
-	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
-		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {			
-			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
-			CELL cell = Coord_Cell(coord);
-			coord = Coord_Whole(Cell_Coord(cell));
-
-			CellClass* cellptr = &(*this)[coord];
-			if (cellptr->visibleFrame != g_startFrameTime)
-				continue;
-
-			cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos, true);
-		}
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos, true);
 	}
 }
 #endif

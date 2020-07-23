@@ -6,7 +6,8 @@ enable_language(ASM)
 set(CMAKE_CXX_FLAGS "")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+SET(CMAKE_CXX_FLAGS_DEBUG "/MTd /Od /Ob0 /Zi /DDEBUG /D_DEBUG")
+SET(CMAKE_C_FLAGS_DEBUG "/MTd /Od /Ob0 /Zi /DDEBUG /D_DEBUG")
 
 set(src_launcher
 	./launcher/launcher_main.cpp
@@ -728,6 +729,9 @@ set(FFmpeg_LIBRARIES
 				"${CMAKE_SOURCE_DIR}/external/ffmpeg-win64/lib/swscale.lib") 
 
 if (MSVC)
+# External always compiles with optimizations enabled.
+set_source_files_properties(${src_external} PROPERTIES COMPILE_FLAGS "/O2")
+
 add_definitions(-D RA_AF -DCHEAT_KEYS -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DSCENARIO_EDITOR -DWINDOWS_IGNORE_PACKING_MISMATCH -DTRUE_FALSE_DEFINED -DWIN32 -DWINDOWS -DENGLISH -D_USRDLL -DREDALERT_EXPORTS)
 add_compile_options(/permissive+  /Zc:forScope- /Zp1)
 endif(MSVC)
