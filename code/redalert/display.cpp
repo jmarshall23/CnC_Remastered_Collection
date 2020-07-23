@@ -599,7 +599,7 @@ void DisplayClass::Set_View_Dimensions(int x, int y, int width, int height)
 	}
 
 	if (cellDisplayCache == NULL) {
-		cellDisplayCache = new CellCache_t[MAP_CELL_W * MAP_CELL_H];
+		cellDisplayCache = new CellCache_t[MAP_CELL_W * MAP_CELL_H * 2];
 	}
 	numCachedDisplayCells = 0;
 

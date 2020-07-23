@@ -84,6 +84,8 @@ extern int UnknownKey;					// in menus.cpp
 
 char MapEditClass::HealthBuf[20];
 
+std::vector<ObjectTypeClass const*> MapEditClass::Objects[NUM_EDIT_CLASSES];
+
 /***************************************************************************
  * MapEditClass::MapEditClass -- class constructor                         *
  *                                                                         *
@@ -271,7 +273,9 @@ void MapEditClass::Clear_List(void)
 	**	Set # object type ptrs to 0, set NumType for each type to 0
 	*/
 	for (int i = 0; i < NUM_EDIT_CLASSES; i++) {
-		Objects[i].clear();
+		if (Objects[i].size() > 0) {
+			Objects[i].clear();
+		}
 	}
 }
 

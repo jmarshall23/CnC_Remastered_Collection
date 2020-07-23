@@ -264,7 +264,7 @@ class MapEditClass : public MouseClass
 		*/
 //		ScenarioVarType ScenVar;
 
-		std::vector<ObjectTypeClass const*> Objects[NUM_EDIT_CLASSES];
+		static std::vector<ObjectTypeClass const*> Objects[NUM_EDIT_CLASSES];
 
 		/*
 		**	Last-selected object to place, and last-selected house of object
