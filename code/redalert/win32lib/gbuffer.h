@@ -453,12 +453,6 @@ inline BOOL GraphicViewPortClass::Get_IsDirectDraw(void)
  *=============================================================================================*/
 inline BOOL GraphicViewPortClass::Lock(void)
 {
-	BOOL lock = GraphicBuff->Lock();
-	if ( !lock ) return(FALSE);
-
-	if (this != GraphicBuff) {
-		Attach(GraphicBuff, XPos, YPos,  Width, Height);
-	}
 	return(TRUE);
 }
 
@@ -479,11 +473,6 @@ inline BOOL GraphicViewPortClass::Lock(void)
  *=============================================================================================*/
 inline BOOL GraphicViewPortClass::Unlock(void)
 {
-	BOOL unlock = GraphicBuff->Unlock();
-	if (!unlock) return(FALSE);
-	if (this != GraphicBuff && IsDirectDraw && !GraphicBuff->LockCount) {
-		Offset = 0;
-	}
 	return(TRUE);
 }
 
