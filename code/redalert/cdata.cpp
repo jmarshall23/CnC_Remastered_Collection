@@ -1630,7 +1630,8 @@ void TemplateTypeClass::Init(TheaterType theater)
 			Image_t *hdImage = Load_StampHD(theater, fullname, tplate.ImageData);
 			if (hdImage)
 			{
-				Get_Stamp_Size(tplate.ImageData, hdImage->renderwidth, hdImage->renderheight);
+				//Get_Stamp_Size(tplate.ImageData, hdImage->renderwidth, hdImage->renderheight);
+				hdImage->isoTileInfo = (IsoTile *)tplate.ImageData;
 				((void const*&)tplate.HDImageData) = hdImage;
 			}
 			else

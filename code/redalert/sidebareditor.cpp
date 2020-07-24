@@ -69,6 +69,7 @@ void SidebarEditor::draw_it(void) {
 		{
 			Debug_LockScroll = true;
 			if (ImGui::MenuItem("Add Game Object")) { mainmenu_selection = 4; }
+			if (ImGui::MenuItem("Add Big Overlay Object")) { mainmenu_selection = 9; }
 			ImGui::EndMenu();
 		}
 

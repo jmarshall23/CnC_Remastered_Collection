@@ -638,6 +638,8 @@ set(src_redalert
 	./redalert/mapscript.cpp
 	./redalert/txtprnt.cpp
 	./redalert/tilesetxml.cpp
+	"redalert/bigoverlay.cpp"
+	"redalert/bigoverlay.h"
  	"redalert/sidebareditor.cpp" 
 	"redalert/rendertexture.cpp"
 	"redalert/rendertexture.h"

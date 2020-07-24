@@ -50,6 +50,7 @@
 #include "sidebareditor.h"
 
 class Light_t;
+class BigOverlay;
 
 /*
 **	This is the maximum # of ObjectTypeClasses the editor has to deal with.
@@ -273,6 +274,7 @@ class MapEditClass : public MouseClass
 		HousesType LastHouse;				// house of last item picked
 
 		Light_t *GrabbedLight;
+		BigOverlay* GrabbedBigOverlay;
 
 		/*
 		**	Variables for grabbing/moving objects

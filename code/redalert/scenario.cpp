@@ -65,6 +65,7 @@
 #include "ccdde.h"
 #include "audiomix.h"
 #include "image.h"
+#include "bigoverlay.h"
 
 extern bool SpawnedFromWChat;
 #endif
@@ -2274,6 +2275,7 @@ bool Read_Scenario_INI(char * fname, bool )
 	Scen.Percent = ini.Get_Int(BASIC, "Percent", Scen.Percent);
 
 	lightManager.Read_Scenerio_Lights(&ini);
+	bigOverlayManager.Read_Scenerio(&ini);
 
 	/*
 	**	Read in the specific information for each of the house types.  This creates
@@ -2646,6 +2648,7 @@ void Write_Scenario_INI(char * fname)
 	ini.Put_Int(BASIC, "Percent", Scen.Percent);
 
 	lightManager.Write_Scenerio_Lights(&ini);
+	bigOverlayManager.Write_Scenerio(&ini);
 	HouseClass::Write_INI(ini);
 	TeamTypeClass::Write_INI(ini);
 	TriggerTypeClass::Write_INI(ini);

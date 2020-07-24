@@ -57,6 +57,8 @@
 
 #include	"imgui.h"
 #include	"function.h"
+#include	"bigoverlay.h"
+#include	"image.h"
 
 #ifdef SCENARIO_EDITOR
 
@@ -110,6 +112,7 @@ MapEditClass::MapEditClass(void)
 	LastHouse = HOUSE_GOOD;
 	GrabbedObject = 0;
 	GrabbedLight = nullptr;
+	GrabbedBigOverlay = nullptr;
 	Scen.Waypoint[WAYPT_HOME] = 0;
 	CurrentCell = 0;
 	CurTeam = NULL;
@@ -546,11 +549,16 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 	//CELL template_cell = (ZoneCell + ZoneOffset);
 	//char tmp[12];
 	//sprintf(tmp, "%d , %d", Cell_X(template_cell), Cell_Y(template_cell));
-	//GL_DrawText(6, 64, 64, tmp);
+	//GL_DrawText(6, 64, 64, tmp);	
 
 	rc = Mouse_Moved();
 	if (Keyboard->Down(KN_LMOUSE) && rc) {
-		if (GrabbedLight)
+		if (GrabbedBigOverlay)
+		{
+			GrabbedBigOverlay->Place(Get_Mouse_X(), Get_Mouse_Y());
+			GrabbedBigOverlay = nullptr;
+		}
+		else if (GrabbedLight)
 		{
 			GrabbedLight->PlaceLight(Get_Mouse_X(), Get_Mouse_Y());
 			GrabbedLight = nullptr;
@@ -727,6 +735,10 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 			if (PendingObject) {
 				Place_Prev();
 			}
+			else if (GrabbedBigOverlay)
+			{
+				bigOverlayManager.AdjustTile(GrabbedBigOverlay, -1);
+			}
 			input = KN_NONE;
 			break;
 
@@ -736,6 +748,10 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 		case KN_RIGHT:
 			if (PendingObject) {
 				Place_Next();
+			}
+			else if (GrabbedBigOverlay)
+			{
+				bigOverlayManager.AdjustTile(GrabbedBigOverlay, 1);
 			}
 			input = KN_NONE;
 			break;
@@ -1479,7 +1495,24 @@ bool MapEditClass::Mouse_Moved(void)
 	const ObjectTypeClass * objtype = NULL;
 	bool retcode = false;
 
-	if (GrabbedLight != NULL)
+	if (GrabbedBigOverlay != NULL)
+	{
+		Image_t* image = GrabbedBigOverlay->GetImage();
+
+		int screenx = Get_Mouse_X();
+		int screeny = Get_Mouse_Y();
+		CellClass::ConvertIsoCoordsToScreen(screenx, screeny);
+		COORDINATE position = Map.Pixel_To_Coord(screenx, screeny);
+		Map.Coord_To_Pixel(position, screenx, screeny);
+		CellClass::ConvertCoordsToIsometric(screenx, screeny);
+
+		GL_RenderImage(image, screenx, screeny, image->width, image->height);
+		old_mx = Get_Mouse_X();
+		old_my = Get_Mouse_Y();
+		old_zonecell = ZoneCell;
+		return true;
+	}
+	else if (GrabbedLight != NULL)
 	{
 		GL_RenderImage(lightManager.GetLightEditorIcon(), Get_Mouse_X(), Get_Mouse_Y(), 32, 32);
 		old_mx = Get_Mouse_X();
@@ -1695,6 +1728,14 @@ void MapEditClass::Main_Menu(void)
 			case 8:
 				GrabbedLight = lightManager.PlaceLight(NULL, 0, 0, 1.0f, 1.0f, 1.0f, 75, LIGHT_POINT);
 				GrabbedLight->isPending = true;
+				break;
+
+			case 9:
+				GrabbedBigOverlay = bigOverlayManager.Editor_PlaceNewBigOverlay();
+				if (GrabbedBigOverlay)
+				{
+					GrabbedBigOverlay->SetEnabled(false);
+				}
 				break;
 
 			/*

@@ -1101,11 +1101,13 @@ void CellClass::Draw_It(int x, int y, bool objects)
 		int cellx = Cell_X(cell);
 		int celly = Cell_Y(cell);
 		if (cellx < Map.MapCellX || celly < Map.MapCellY) {
-			GL_SetColor(0.35, 0.35, 0.35);
+			//GL_SetColor(0.35, 0.35, 0.35);
+			return;
 		}
 
 		if (cellx >= Map.MapCellX + Map.MapCellWidth || celly >= Map.MapCellY + Map.MapCellHeight) {
-			GL_SetColor(0.35, 0.35, 0.35);
+			//GL_SetColor(0.35, 0.35, 0.35);
+			return;
 		}
 
 		CellCount++;
@@ -1326,7 +1328,12 @@ void CellClass::Draw_It(int x, int y, bool objects)
 						**	it means nothing.
 						*/
 						case RTTI_OVERLAYTYPE:
-							OverlayTypeClass::As_Reference(((OverlayTypeClass *)Map.PendingObject)->Type).Draw_It(x, y, OverlayData);
+							{
+								int xx = x;
+								int yy = y;
+								ConvertCoordsToIsometric(xx, yy);
+								OverlayTypeClass::As_Reference(((OverlayTypeClass*)Map.PendingObject)->Type).Draw_It(xx, yy, OverlayData);
+							}
 							break;
 
 						/*

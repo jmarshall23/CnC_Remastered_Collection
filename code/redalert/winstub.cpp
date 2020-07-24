@@ -69,6 +69,7 @@
 #include <vector>
 #include "HOUSECOLOR.H"
 #include "IMGUTIL.H"
+#include "bigoverlay.h"
 
 GLuint backbuffer_texture = -1;
 //byte* backbuffer_data;
@@ -889,6 +890,7 @@ void Create_Main_Window ( HANDLE instance , int command_show , int width , int h
 	VQA_Init();
 
 	lightManager.Init();
+	bigOverlayManager.Init();
 }
 
 

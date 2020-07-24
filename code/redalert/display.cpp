@@ -88,6 +88,7 @@
 #include	"function.h"
 #include	"vortex.h"
 #include    "image.h"
+#include	"bigoverlay.h"
 
 struct AdjancentWeight_t {
 	AdjancentWeight_t() {
@@ -2041,6 +2042,9 @@ void DisplayClass::CacheVisibleCells(void) {
 		*/
 		if (HidPage.Lock()) {
 			Redraw_Icons();
+
+			// Big Overlays come after tiles.
+			bigOverlayManager.Render();
 
 			/*
 			**	Draw the infantry bodies in this special layer.
