@@ -86,6 +86,12 @@ void BigOverlayManager::Init(void) {
 		sprintf(temp, "BIGOVERLAY_WCLIFF%d", i);
 		RegisterBigOverlay(THEATER_SNOW, temp);
 	}
+	for (int i = 1; i <= 40; i++)
+	{
+		char temp[512];
+		sprintf(temp, "BIGOVERLAY_CLIFF%d", i);
+		RegisterBigOverlay(THEATER_SNOW, temp);
+	}
 }
 
 /*
