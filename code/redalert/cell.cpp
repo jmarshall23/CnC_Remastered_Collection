@@ -1121,9 +1121,9 @@ void CellClass::Draw_It(int x, int y, bool objects)
 		}
 
 // jmarshall - debug mechanism
-		if (bigOverlay != NULL) {
-			GL_SetColor(0.35, 0.35, 0.35);
-		}
+		//if (bigOverlay != NULL) {
+		//	GL_SetColor(0.35, 0.35, 0.35);
+		//}
 // jmarshall end
 
 		CellCount++;

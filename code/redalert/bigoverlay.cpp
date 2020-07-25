@@ -57,7 +57,7 @@ void BigOverlay::draw_it(void) {
 	CELL cell = Coord_Cell(position);
 	CellClass* cellptr = &(Map)[cell];
 
-	if (!(cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)))
+	if ((!(cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr))) && !Debug_Unshroud)
 		return;
 
 	int screenx, screeny;
