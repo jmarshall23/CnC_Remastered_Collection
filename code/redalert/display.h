@@ -40,6 +40,7 @@
 #include    "tacticalcoord.h"
 
 struct Image_t;
+class BigOverlay;
 
 // jmarshall - isometric
 #define	ICON_PIXEL_W	 		48
@@ -150,6 +151,8 @@ class DisplayClass: public MapClass
 		*/
 		virtual void AI(KeyNumType &input, int x, int y);
 		virtual void Draw_It(bool complete=false);
+
+		virtual void FlagBigOverlayCells(BigOverlay* overlay, int screenx, int screeny);
 
 		/*
 		**	Added functionality.

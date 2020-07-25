@@ -4742,6 +4742,35 @@ void DisplayClass::All_To_Look(HouseClass *house, bool units_only)
 }
 
 
+void DisplayClass::FlagBigOverlayCells(BigOverlay* overlay, int screenx, int screeny) {
+	int width = overlay->GetImage()->width;
+	int height = overlay->GetImage()->height;
+
+	overlay->numOverlayedCells = 0;
+
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		
+		Rect rect;
+
+		rect.X = cellptr->x_screen_pos - CELL_PIXEL_W;
+		rect.Y = cellptr->y_screen_pos - height;
+		rect.X2 = rect.X + width;
+		rect.Y2 = rect.Y + height;
+		rect.Width = width;
+		rect.Height = height;
+
+		if(rect.ContainsPoint(screenx, screeny)) {
+			if(cellptr->bigOverlay == NULL)
+			{
+				cellptr->bigOverlay = overlay;
+				overlay->overlayedCells[overlay->numOverlayedCells++] = Cell_Coord(cellptr->Cell_Number());
+			}
+		}
+	}
+}
+
+
 /*
 ** Added house parameter for client/server multiplayer. ST - 8/12/2019 11:48AM
 ** 

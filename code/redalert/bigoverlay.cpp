@@ -4,6 +4,7 @@
 #include "function.h"
 #include "bigoverlay.h"
 #include "image.h"
+#include <string>
 #include <imgui.h>
 
 BigOverlayManager bigOverlayManager;
@@ -15,6 +16,7 @@ BigOverlay::BigOverlay
 */
 BigOverlay::BigOverlay() {
 	image = NULL;
+	numOverlayedCells = 0;
 	enabled = false;
 }
 
@@ -26,10 +28,12 @@ BigOverlay::Place
 void BigOverlay::Place(int screenx, int screeny) {
 	COORDINATE lightCoord;
 
+	Map.FlagBigOverlayCells(this, screenx, screeny);
+
 	CellClass::ConvertIsoCoordsToScreen(screenx, screeny);
 
 	position = Map.Pixel_To_Coord(screenx, screeny);
-	enabled = true;
+	enabled = true;	
 }
 
 /*
@@ -225,6 +229,29 @@ BigOverlayManager::Write_Scenerio_Lights
 ====================
 */
 void BigOverlayManager::Write_Scenerio(CCINIClass* ini) {
+	std::vector<COORDINATE> coord_table;
+	ini->Clear("BigOverlayCoords");
+	for (int i = 0; i < MAX_WORLD_BIGOVERLAYS; i++) {
+		if (bigOverlays[i].IsEnabled() == false) {
+			continue;
+		}
+
+		bigOverlays[i].startOverlayCoord = coord_table.size();
+		for (int d = 0; d < bigOverlays[i].numOverlayedCells; d++)
+		{
+			coord_table.push_back(bigOverlays[i].overlayedCells[d]);
+		}
+	}
+
+	for (int i = 0; i < coord_table.size(); i++) {
+		char buffer[2048*12];
+		sprintf(buffer, "%d", coord_table[i]);
+
+		char name[256];
+		sprintf(name, "%d", i);
+		ini->Put_String("BigOverlayCoords", name, buffer);
+	}
+
 	ini->Clear("BigOverlay");
 
 	// Write out the lights.
@@ -233,11 +260,21 @@ void BigOverlayManager::Write_Scenerio(CCINIClass* ini) {
 			continue;
 		}
 
-		char buffer[2048];
-		char name[256];
-		sprintf(buffer, "%d,%d", bigOverlays[i].GetPosition(), bigOverlays[i].GetIndex());
+		//char buffer[2048*12];
+		//sprintf(buffer, "%d,%d,%d", bigOverlays[i].GetPosition(), bigOverlays[i].GetIndex(), bigOverlays[i].numOverlayedCells);
+
+		std::string buffer;
+		buffer += std::to_string(bigOverlays[i].GetPosition());
+		buffer += ",";
+		buffer += std::to_string(bigOverlays[i].GetIndex());
+		buffer += ",";
+		buffer += std::to_string(bigOverlays[i].startOverlayCoord);
+		buffer += ",";
+		buffer += std::to_string(bigOverlays[i].numOverlayedCells);
+
+		char name[256];		
 		sprintf(name, "%d", i);
-		ini->Put_String("BigOverlay", name, buffer);
+		ini->Put_String("BigOverlay", name, buffer.c_str());
 	}
 }
 
@@ -248,8 +285,19 @@ BigOverlayManager::Read_Scenerio
 */
 void BigOverlayManager::Read_Scenerio(CCINIClass* ini) {
 	char buf[2048];
+	std::vector<COORDINATE> coord_table;
 
 	Reset();
+
+	{
+		int len = ini->Entry_Count("BigOverlayCoords");
+		for (int index = 0; index < len; index++) {
+			char const* entry = ini->Get_Entry("BigOverlayCoords", index);
+			ini->Get_String("BigOverlayCoords", entry, NULL, buf, sizeof(buf));
+
+			coord_table.push_back(atoi(buf));
+		}
+	}
 
 	int len = ini->Entry_Count("BigOverlay");
 	for (int index = 0; index < len; index++) {
@@ -264,6 +312,14 @@ void BigOverlayManager::Read_Scenerio(CCINIClass* ini) {
 
 		int in = atoi(strtok(NULL, ","));
 		Image_t* image = bigOverlayTypes[in].image;
-		bigOverlay->SetImage(in, image);		
+		bigOverlay->SetImage(in, image);	
+
+		bigOverlay->startOverlayCoord = atoi(strtok(NULL, ","));
+		bigOverlay->numOverlayedCells = atoi(strtok(NULL, ","));
+		for (int d = 0; d < bigOverlay->numOverlayedCells; d++) {
+			bigOverlay->overlayedCells[d] = coord_table[bigOverlay->startOverlayCoord + d];
+			CellClass* cellptr = &(Map)[bigOverlay->overlayedCells[d]];
+			cellptr->bigOverlay = bigOverlay;
+		}
 	}
 }

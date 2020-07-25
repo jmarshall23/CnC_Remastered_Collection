@@ -131,6 +131,12 @@ CellClass::CellClass(void) :
 	IsVisibleByPlayerMask(0),
 	CTFFlag(NULL)
 {
+	x_screen_pos = 0;
+	y_screen_pos = 0;
+	x_world_pos = 0;
+	y_world_pos = 0;
+	bigOverlay = NULL;
+
 	for (int zone = MZONE_FIRST; zone < MZONE_COUNT; zone++) {
 		Zones[zone] = 0;
 	}
@@ -468,6 +474,10 @@ bool CellClass::Is_Clear_To_Build(SpeedType loco) const
 	**	During scenario initialization, passability is always guaranteed.
 	*/
 	if (ScenarioInit) return(true);
+
+	if (bigOverlay != NULL) {
+		return false;
+	}
 
 	/*
 	**	If there is an object there, then don't allow building.
@@ -1110,6 +1120,12 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			return;
 		}
 
+// jmarshall - debug mechanism
+		if (bigOverlay != NULL) {
+			GL_SetColor(0.35, 0.35, 0.35);
+		}
+// jmarshall end
+
 		CellCount++;
 
 		/*
@@ -1166,13 +1182,13 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			*/
 			if (ttype->Get_Image_Data()) {
 // jmarshall - hd image should always be valid even if loading legacy assets
-				int xx = x;
-				int yy = y;
-				ConvertCoordsToIsometric(xx, yy);
-				lastRenderX = xx;
-				lastRenderY = yy;
+				x_screen_pos = x;
+				y_screen_pos = y;
+				ConvertCoordsToIsometric(x_screen_pos, y_screen_pos);
+				lastRenderX = x_screen_pos;
+				lastRenderY = y_screen_pos;
 				int ticon = icon;
-				LogicPage->Draw_Stamp(ttype->Get_HDImage_Data(), icon, xx, yy, NULL, WINDOW_TACTICAL);
+				LogicPage->Draw_Stamp(ttype->Get_HDImage_Data(), icon, x_screen_pos, y_screen_pos, NULL, WINDOW_TACTICAL);
 // jmarshall end
 				//if (remap) {
 				//	LogicPage->Remap(x+Map.TacPixelX, y+Map.TacPixelY, ICON_PIXEL_W, ICON_PIXEL_H, remap);
@@ -3014,6 +3030,10 @@ bool CellClass::Is_Clear_To_Move(SpeedType loco, bool ignoreinfantry, bool ignor
 	*/
 	if (loco == SPEED_WINGED) {
 		return(true);
+	}
+
+	if (bigOverlay != NULL) {
+		return false;
 	}
 
 	/*

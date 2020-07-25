@@ -3161,6 +3161,10 @@ MoveType UnitClass::Can_Enter_Cell(CELL cell, FacingType ) const
 
 	if ((unsigned)cell >= MAP_CELL_TOTAL) return(MOVE_NO);
 
+	if (cellptr->bigOverlay != NULL) {
+		return MOVE_NO;
+	}
+
 	/*
 	**	Moving off the edge of the map is not allowed unless
 	**	this is a loaner vehicle.

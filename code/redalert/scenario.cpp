@@ -2275,7 +2275,6 @@ bool Read_Scenario_INI(char * fname, bool )
 	Scen.Percent = ini.Get_Int(BASIC, "Percent", Scen.Percent);
 
 	lightManager.Read_Scenerio_Lights(&ini);
-	bigOverlayManager.Read_Scenerio(&ini);
 
 	/*
 	**	Read in the specific information for each of the house types.  This creates
@@ -2305,6 +2304,8 @@ bool Read_Scenario_INI(char * fname, bool )
 	*/
 	Map.Read_INI(ini);
 	Call_Back();
+
+	bigOverlayManager.Read_Scenerio(&ini);
 
 	/*
 	**	Assign PlayerPtr by reading the player's house from the INI;

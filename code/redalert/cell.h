@@ -177,10 +177,14 @@ class CellClass
 		ObjectClass * Overlapper[6];
 #endif
 
+		class BigOverlay* bigOverlay;
+
 
 		int visibleFrame;
 		int x_world_pos;
 		int y_world_pos;
+		int x_screen_pos;
+		int y_screen_pos;
 
 		/*
 		**	Per-player view of whether a cell is mapped. One bit for each house type. ST - 8/2/2019 3:00PM

@@ -17,6 +17,7 @@ struct BigOverlayType_t {
 
 class BigOverlay {
 friend class BigOverlayManager;
+friend class DisplayClass;
 public:
 	BigOverlay();
 	int GetIndex(void) { return index; }
@@ -31,6 +32,10 @@ protected:
 	void SetPosition(COORDINATE position) { this->position = position; }
 	void SetOverlayNum(int overlayNum) { this->overlayNum = overlayNum; }
 	bool IsEnabled(void) { return enabled; }	
+
+	int startOverlayCoord;
+	int numOverlayedCells;
+	COORDINATE overlayedCells[256];
 private:
 	int overlayNum;
 	COORDINATE position;
