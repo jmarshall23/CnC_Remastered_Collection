@@ -54,6 +54,12 @@ BigOverlay::draw_it
 ======================
 */
 void BigOverlay::draw_it(void) {
+	CELL cell = Coord_Cell(position);
+	CellClass* cellptr = &(Map)[cell];
+
+	if (!(cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)))
+		return;
+
 	int screenx, screeny;
 	GetRenderPosition(screenx, screeny);
 	GL_RenderImage(image, screenx, screeny, image->width, image->height);
