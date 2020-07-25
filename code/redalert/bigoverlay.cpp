@@ -18,6 +18,8 @@ BigOverlay::BigOverlay() {
 	image = NULL;
 	numOverlayedCells = 0;
 	enabled = false;
+	screenx = -1;
+	screeny = -1;
 }
 
 /*
@@ -27,6 +29,10 @@ BigOverlay::Place
 */
 void BigOverlay::Place(int screenx, int screeny) {
 	COORDINATE lightCoord;
+
+	if (enabled) {
+		return;
+	}
 
 	Map.FlagBigOverlayCells(this, screenx, screeny);
 
@@ -60,9 +66,38 @@ void BigOverlay::draw_it(void) {
 	if ((!(cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr))) && !Debug_Unshroud)
 		return;
 
-	int screenx, screeny;
+	screenx = 0;
+	screeny = 0;
+	if(Map.GetSelectedBigOverlay() == this)
+	{
+		GL_SetColor(1.0f, 0.0f, 0.0f);
+	}
 	GetRenderPosition(screenx, screeny);
 	GL_RenderImage(image, screenx, screeny, image->width, image->height);
+	if (Map.GetSelectedBigOverlay() == this)
+	{
+		GL_SetColor(1.0f, 1.0f, 1.0f);
+	}
+}
+
+/*
+====================
+BigOverlayManager::InRegion
+====================
+*/
+bool BigOverlay::InRegion(int x, int y) {
+	Rect rect;
+	int width = image->width;
+	int height = image->height;
+
+	rect.X = screenx;
+	rect.Y = screeny;
+	rect.X2 = rect.X + width;
+	rect.Y2 = rect.Y + height;
+	rect.Width = width;
+	rect.Height = height;
+
+	return rect.ContainsPoint(x, y);
 }
 
 /*
@@ -170,6 +205,22 @@ BigOverlay* BigOverlayManager::AllocateBigOverlay(void) {
 
 	assert(!"Too many big overlays in the scene!");
 	return NULL;
+}
+
+/*
+====================
+BigOverlayManager::Editor_RemoveBigOverlay
+====================
+*/
+void BigOverlayManager::Editor_RemoveBigOverlay(BigOverlay* bigOverlay) {
+	for(int i = 0; i < bigOverlay->numOverlayedCells; i++)
+	{
+		CellClass* cellptr = &(Map)[bigOverlay->overlayedCells[i]];
+		cellptr->bigOverlay = NULL;
+	}
+
+	bigOverlay->numOverlayedCells = 0;
+	bigOverlay->enabled = false;
 }
 
 /*
@@ -288,6 +339,22 @@ void BigOverlayManager::Write_Scenerio(CCINIClass* ini) {
 		sprintf(name, "%d", i);
 		ini->Put_String("BigOverlay", name, buffer.c_str());
 	}
+}
+
+/*
+====================
+BigOverlayManager::SelectBigOverlay
+====================
+*/
+BigOverlay* BigOverlayManager::SelectBigOverlay(int x, int y) {
+	for (int i = 0; i < MAX_WORLD_BIGOVERLAYS; i++) {
+		if (bigOverlays[i].IsEnabled()) {
+			if(bigOverlays[i].InRegion(x, y)) {
+				return &bigOverlays[i];
+			}
+		}
+	}
+	return NULL;
 }
 
 /*

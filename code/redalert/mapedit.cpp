@@ -552,7 +552,17 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 	//GL_DrawText(6, 64, 64, tmp);	
 
 	rc = Mouse_Moved();
-	if (Keyboard->Down(KN_LMOUSE) && rc) {
+
+	if (Keyboard->Down(KN_DELETE)) {
+		if (GrabbedBigOverlay)
+		{
+			bigOverlayManager.Editor_RemoveBigOverlay(GrabbedBigOverlay);
+			GrabbedBigOverlay = NULL;
+		}
+	}
+
+	bool lMouseDown = Keyboard->Down(KN_LMOUSE);
+	if (lMouseDown && rc) {
 		if (GrabbedBigOverlay)
 		{
 			GrabbedBigOverlay->Place(Get_Mouse_X(), Get_Mouse_Y());
@@ -587,6 +597,15 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 					}
 				}
 			}
+		}
+	}
+
+	if (lMouseDown && GrabbedBigOverlay == NULL && PendingObject == NULL)
+	{
+		BigOverlay* tempOverlay = bigOverlayManager.SelectBigOverlay(Get_Mouse_X(), Get_Mouse_Y());
+		if (tempOverlay)
+		{
+			GrabbedBigOverlay = tempOverlay;
 		}
 	}
 

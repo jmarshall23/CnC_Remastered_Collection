@@ -28,6 +28,9 @@ public:
 	Image_t* GetImage(void) { return image; }
 	void SetEnabled(bool enabled) { this->enabled = enabled; }
 	COORDINATE GetPosition() { return position; }
+	int GetScreenX() { return screenx; }
+	int GetScreenY() { return screeny; }
+	bool InRegion(int x, int y);
 protected:
 	void SetPosition(COORDINATE position) { this->position = position; }
 	void SetOverlayNum(int overlayNum) { this->overlayNum = overlayNum; }
@@ -42,6 +45,8 @@ private:
 	Image_t* image;
 	bool enabled;
 	int index;
+	int screenx;
+	int screeny;
 };
 
 class BigOverlayManager {
@@ -65,7 +70,9 @@ public:
 
 	// Allocates a big overlay
 	BigOverlay*	 AllocateBigOverlay(void);
+	BigOverlay* SelectBigOverlay(int x, int y);
 
+	void Editor_RemoveBigOverlay(BigOverlay* bigOverlay);
 	BigOverlay *Editor_PlaceNewBigOverlay(void);
 private:	
 	void RegisterBigOverlay(int theater, const char* name);

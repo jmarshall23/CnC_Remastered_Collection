@@ -205,6 +205,8 @@ class MapEditClass : public MouseClass
 //		int Trigger_Needs_Team(TriggerClass *trigger);
 		void Fatal(int txt);
 
+		BigOverlay* GetSelectedBigOverlay(void) { return GrabbedBigOverlay; }
+
 		/*
 		**	mapeddlg.cpp
 		*/
