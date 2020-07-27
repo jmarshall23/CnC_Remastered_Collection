@@ -56,6 +56,7 @@ bool Image_Add32BitImage(const char* name, Image_t* image, int HouseId, int Shap
 
 Image_t* Image_CreateBlankImage(const char* name, int width, int height, bool hasAlpha);
 void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t *palette, bool hasAlpha);
+Image_t* Image_CreateDepthImage(const char* name, int width, int height);
 
 void Sys_SetOverlayImage(Image_t* image);
 

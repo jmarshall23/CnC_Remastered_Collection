@@ -255,6 +255,12 @@ void DisplayClass::One_Time(void)
 	TransIconsetHD[2] = Image_LoadImage("ui/trans/trans2.png");
 
 	ShadowShapes = Image_LoadImage("ui/shroud.png");
+
+	Image_t* sceneAlbedoTexture = Image_CreateBlankImage("sceneAlbedoTexture", ScreenWidth, ScreenHeight, true);
+	Image_t* sceneDepthTexture = Image_CreateDepthImage("sceneDepthTexture", ScreenWidth, ScreenHeight);
+
+	sceneRenderTexture = new RenderTexture(sceneAlbedoTexture, sceneDepthTexture);
+	sceneRenderTexture->InitRenderTexture();
 // jmarshall end
 
 	Set_View_Dimensions(0, 0);
@@ -285,6 +291,7 @@ void DisplayClass::Init_Clear(void)
 	*/
 	PendingObjectPtr = 0;
 	PendingObject = 0;
+	zoomLevel = 0;
 	PendingHouse = HOUSE_NONE;
 	CursorSize = 0;
 	IsTargettingMode = SPC_NONE;
@@ -1098,7 +1105,6 @@ void DisplayClass::AI(KeyNumType & input, int x, int y)
 	MapClass::AI(input, x, y);
 }
 
-
 /***********************************************************************************************
  * DisplayClass::Submit -- Adds a game object to the map rendering system.                     *
  *                                                                                             *
@@ -1179,11 +1185,10 @@ void DisplayClass::Remove(ObjectClass const * object, LayerType layer)
  *=============================================================================================*/
 CELL DisplayClass::Click_Cell_Calc(int x, int y) const
 {
-	int tileX, tileY;
+	int tileX, tileY;	
 	if (!CellClass::ScreenCoordsToIsoTile(x, y, tileX, tileY)) {
 		return -1;
 	}
-
 	x = tileX * CELL_PIXEL_W;
 	y = tileY * CELL_PIXEL_H;
 
@@ -1969,7 +1974,8 @@ void DisplayClass::CacheVisibleCells(void) {
 
 	MapClass::Draw_It(forced);
 
-	if (IsToRedraw || forced) {
+	GL_SetRenderTexture(sceneRenderTexture);
+	{
 		BStart(BENCH_TACTICAL);
 		IsToRedraw = false;
 
@@ -2135,14 +2141,6 @@ void DisplayClass::CacheVisibleCells(void) {
 			Layer[LAYER_GROUND][index]->IsToDisplay = false;
 		}
 #endif
-
-		/*
-		**	Draw the rubber band over the top of it all.
-		*/
-		if (IsRubberBand) {
-			LogicPage->Draw_Rect(BandX+TacPixelX, BandY+TacPixelY, NewX+TacPixelX, NewY+TacPixelY, WHITE);
-		}
-
 		/*
 		**	Clear the redraw flags so that normal redraw flag setting can resume.
 		*/
@@ -2166,6 +2164,39 @@ void DisplayClass::CacheVisibleCells(void) {
 #endif
 		BEnd(BENCH_TACTICAL);
 	}
+
+	/*
+	**	Draw the rubber band over the top of it all.
+	*/
+	if (IsRubberBand) {
+		LogicPage->Draw_Rect(BandX + TacPixelX, BandY + TacPixelY, NewX + TacPixelX, NewY + TacPixelY, WHITE);
+	}
+
+	GL_SetRenderTexture(NULL);
+
+	int renderTargetScale = ZoomLevel;
+	if(Debug_Map) {
+		renderTargetScale = 0;
+	}
+
+	double scale = ((((float)ScreenWidth / (float)ScreenHeight) * (float)renderTargetScale) * 0.05) + 1;
+
+	GL_RenderImage(sceneRenderTexture->GetColorImage(0), 0, 0, ScreenWidth * scale, ScreenHeight * scale, 0, 0, true, true);
+}
+
+void DisplayClass::Pixel_To_Zoom(int& x, int& y) const {
+	if(Debug_Map) {
+		return;
+	}
+
+	int renderTargetScale = ZoomLevel;
+	if (Debug_Map) {
+		renderTargetScale = 0;
+	}
+
+	double scale = ((((float)ScreenWidth / (float)ScreenHeight) * (float)renderTargetScale) * 0.05) + 1;
+	x = x / scale;
+	y = y / scale;
 }
 
 /***********************************************************************************************
@@ -2900,6 +2931,8 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 	*/
 	x = Get_Mouse_X();
 	y = Get_Mouse_Y();
+
+	Map.Pixel_To_Zoom(x, y);
 
 	int screenX, screenY;
 	screenX = x;

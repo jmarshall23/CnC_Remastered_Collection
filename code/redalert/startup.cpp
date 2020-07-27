@@ -932,6 +932,7 @@ void Read_Setup_Options( RawFileClass *config_file )
 
 		ScreenWidth = ini.Get_Int("Options", "Width", 1280);
 		ScreenHeight = ini.Get_Int("Options", "Height", 720);
+		ZoomLevel = ini.Get_Int("Options", "ZoomLevel", 0);
 
 		/*
 		** See if an alternative socket number has been specified

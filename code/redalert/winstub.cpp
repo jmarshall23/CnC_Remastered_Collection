@@ -315,8 +315,8 @@ Image_t* Image_CreateBlankImage(const char* name, int width, int height, bool ha
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 
 	strcpy(image->name, name);
@@ -329,6 +329,46 @@ Image_t* Image_CreateBlankImage(const char* name, int width, int height, bool ha
 	loaded_images.push_back(image);
 	return image;
 }
+
+Image_t* Image_CreateDepthImage(const char* name, int width, int height) {
+	int64_t hash = generateHashValue(name, strlen(name));
+
+	int image_table_size = loaded_images.size();
+	if (image_table_size > 0)
+	{
+		Image_t** image_table = &loaded_images[0];
+
+		// Check to see if the image is already loaded.
+		for (int i = 0; i < image_table_size; i++) {
+			if (image_table[i]->namehash == hash) {
+				return image_table[i];
+			}
+		}
+	}
+	Image_t* image = new Image_t();
+
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
+	strcpy(image->name, name);
+
+	image->HouseImages[0].image[0][0] = texture;
+	image->namehash = hash;
+	image->renderwidth[0] = image->width = width;
+	image->renderheight[0] = image->height = height;
+
+	loaded_images.push_back(image);
+	return image;
+}
+
 
 void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t* palette, bool hasAlpha) {
 	if (image->ScratchBuffer == NULL && paletteRebuild) {

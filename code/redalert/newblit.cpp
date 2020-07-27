@@ -19,7 +19,7 @@ static void GL_SetRenderTextureCallback(const ImDrawList* parent_list, const ImD
 	}
 	else {
 		renderTexture->MakeCurrent();
-		glClearColor(0.45, 0.45, 0.45, 1.0);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 }
@@ -67,17 +67,27 @@ void GL_ResetClipRect(void) {
 	ImGui::GetBackgroundDrawList()->PopClipRect();
 }
 
-void GL_RenderImage(Image_t* image, int x, int y, int width, int height, int colorRemap, int shapeId) {
-	if(x < 0 || y < 0) {
-		return;
-	}
+void GL_RenderImage(Image_t* image, int x, int y, int width, int height, int colorRemap, int shapeId, bool ignoreOutOfScreenPixels, bool flipUV) {
+	if (!ignoreOutOfScreenPixels)
+	{
+		if (x < 0 || y < 0) {
+			return;
+		}
 
-	if(x >= ScreenWidth || y >= ScreenHeight) {
-		return;
+		if (x >= ScreenWidth || y >= ScreenHeight) {
+			return;
+		}
 	}
 
 	ImVec2 mi(x, y);
 	ImVec2 ma(x + width, y + height);
+	ImVec2 uv(0, 0);
+	ImVec2 uv2(1, 1);
+
+	if(flipUV) {
+		uv.y = 1;
+		uv2.y = 0;
+	}
 
 	if (forceForgegroundRender) {
 		GL_RenderForeGroundImage(image, x, y, width, height, colorRemap, shapeId);
@@ -86,12 +96,12 @@ void GL_RenderImage(Image_t* image, int x, int y, int width, int height, int col
 
 	if (image->numFrames > 0) {
 		if(image->HouseImages[colorRemap].image[shapeId][((int)animFrameNum) % image->numFrames] == 0)
-			ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][0], mi, ma, ImVec2(0, 0), ImVec2(1, 1), g_currentColor);
+			ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][0], mi, ma, uv, uv2, g_currentColor);
 		else
-			ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][((int)animFrameNum) % image->numFrames], mi, ma, ImVec2(0, 0), ImVec2(1, 1), g_currentColor);
+			ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][((int)animFrameNum) % image->numFrames], mi, ma, uv, uv2, g_currentColor);
 	}
 	else {
-		ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][0], mi, ma, ImVec2(0, 0), ImVec2(1, 1), g_currentColor);
+		ImGui::GetBackgroundDrawList()->AddImage((ImTextureID)image->HouseImages[colorRemap].image[shapeId][0], mi, ma, uv, uv2, g_currentColor);
 	}
 
 }

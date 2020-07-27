@@ -39,6 +39,7 @@
 #include	"layer.h"
 #include    "tacticalcoord.h"
 
+class RenderTexture;
 struct Image_t;
 class BigOverlay;
 
@@ -102,6 +103,9 @@ class DisplayClass: public MapClass
 		short const *CursorSize;
 		short CursorShapeSave[256];	// For save/load
 		bool ProximityCheck;				// Is proximity check ok?
+		
+		int zoomLevel;
+		RenderTexture* sceneRenderTexture;
 
 		/*
 		** This holds the building type that is about to be placed upon the map.
@@ -187,6 +191,7 @@ class DisplayClass: public MapClass
 		void Select_These(COORDINATE coord1, COORDINATE coord2, bool additive = false);
 		COORDINATE Pixel_To_Coord(int x, int y) const;
 		bool Coord_To_Pixel(COORDINATE coord, int & x, int & y) const;
+		void Pixel_To_Zoom(int& x, int& y) const;
 		bool Push_Onto_TacMap(COORDINATE &source, COORDINATE &dest);
 		void Remove(ObjectClass const * object, LayerType layer);
 		void Submit(ObjectClass const * object, LayerType layer);

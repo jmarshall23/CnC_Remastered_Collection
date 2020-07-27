@@ -186,6 +186,7 @@ GraphicBufferClass	SysMemPage(DEFAULT_SCREEN_WIDTH, 200, (void*)NULL);
 WinTimerClass *		WindowsTimer=NULL;
 int						ScreenWidth=6072;
 int						ScreenHeight=6072;
+int						ZoomLevel = 6;
 GraphicBufferClass	ModeXBuff;
 bool						InMovie = FALSE;	//Are we currently playing a VQ movie?
 HANDLE					hInstance;

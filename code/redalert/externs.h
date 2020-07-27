@@ -134,6 +134,7 @@ extern LPDIRECTSOUND				SoundObject;
 extern LPDIRECTSOUNDBUFFER		PrimaryBufferPtr;
 extern int							ScreenWidth;
 extern int							ScreenHeight;
+extern int							ZoomLevel;
 extern GraphicBufferClass		ModeXBuff;
 
 #else
