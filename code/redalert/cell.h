@@ -45,6 +45,7 @@
 */
 class CellClass
 {
+	friend class DisplayClass;
 	public:
 		/*
 		**	This is the ID number of this cell. By placing the ID number here, it doesn't have
@@ -185,6 +186,7 @@ class CellClass
 		int y_world_pos;
 		int x_screen_pos;
 		int y_screen_pos;
+		int debug_select;
 
 		/*
 		**	Per-player view of whether a cell is mapped. One bit for each house type. ST - 8/2/2019 3:00PM

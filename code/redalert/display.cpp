@@ -110,6 +110,8 @@ struct AdjancentWeight_t {
 */
 LayerClass DisplayClass::Layer[LAYER_COUNT];
 
+CellDisplayCache_t DisplayClass::visibleCellTable[MAP_CELL_W][MAP_CELL_H];
+
 /*
 ** Fading tables
 */
@@ -1906,9 +1908,6 @@ void DisplayClass::CacheVisibleCells(void) {
 			CELL cell = Coord_Cell(coord);
 			coord = Coord_Whole(Cell_Coord(cell));
 
-			if (Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)
-				continue;
-
 			/*
 			**	Only cells flagged to be redraw are examined.  
 			*/
@@ -1918,14 +1917,41 @@ void DisplayClass::CacheVisibleCells(void) {
 			if (Coord_To_Pixel(coord, xpixel, ypixel)) {
 				CellClass* cellptr = &(*this)[coord];
 				if ((cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)) || Debug_Unshroud) {
-					cellptr->visibleFrame = g_startFrameTime;
-					cellptr->x_world_pos = xpixel;
-					cellptr->y_world_pos = ypixel;
-					cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
+					if (!(Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)) {
+						cellptr->visibleFrame = g_startFrameTime;
+						cellptr->x_world_pos = xpixel;
+						cellptr->y_world_pos = ypixel;
+						cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
+					}
+					else {
+						IsShadowPresent = true;
+					}
 				}
 				else {
 					IsShadowPresent = true;
-				}				
+				}	
+
+				// If the tile is on screen then we need to create render coordinates for it even if it isn't rendered.
+				// This allows us to use these bits for things like movement and cell selection later on.
+				{
+					cellptr->x_screen_pos = xpixel;
+					cellptr->y_screen_pos = ypixel;
+					CellClass::ConvertCoordsToIsometric(cellptr->x_screen_pos, cellptr->y_screen_pos);
+					cellptr->lastRenderX = cellptr->x_screen_pos;
+					cellptr->lastRenderY = cellptr->y_screen_pos;
+
+					if (cellptr->x_screen_pos < -CELL_PIXEL_W || cellptr->y_screen_pos < -CELL_PIXEL_H)
+						continue;
+
+					int tileX = cellptr->x_screen_pos / CELL_PIXEL_W;
+					int tileY = cellptr->y_screen_pos / CELL_PIXEL_H;
+
+					if (tileX < MAP_CELL_W && tileY < MAP_CELL_H && tileX > 0 && tileY > 0)
+					{
+						Map.visibleCellTable[tileX][tileY].ptr = cellptr;
+						Map.visibleCellTable[tileX][tileY].lastFrameRendered = animFrameNum + 1;
+					}
+				}
 			}
 		}
 	}				
@@ -2934,20 +2960,29 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 
 	Map.Pixel_To_Zoom(x, y);
 
-	int screenX, screenY;
-	screenX = x;
-	screenY = y;
-	CellClass::ConvertIsoCoordsToScreen(x, y);
+	int tileX = x / CELL_PIXEL_W;
+	int tileY = y / CELL_PIXEL_H;
 
-	bool edge = (y == 0 || x == 0 || x == SeenBuff.Get_Width()-1 || y == SeenBuff.Get_Height()-1);
-	COORDINATE coord = Map.Pixel_To_Coord(x, y);
-	CELL cell = Coord_Cell(coord);
+	if (tileX > MAP_CELL_W || tileY > MAP_CELL_H) {
+		return (GadgetClass::Action(0, key));
+	}
+
+	CellDisplayCache_t* cellcache = &Map.visibleCellTable[tileX][tileY];
+	if(animFrameNum > cellcache->lastFrameRendered || cellcache->ptr == NULL) {
+		return (GadgetClass::Action(0, key));
+	}
+	CELL cell = cellcache->ptr->Cell_Number();
+	COORDINATE coord = cellcache->ptr->Cell_Coord();
+
+	//cellcache->ptr->debug_select = g_startFrameTime;
+
+	bool edge = (y == 0 || x == 0 || x == SeenBuff.Get_Width() - 1 || y == SeenBuff.Get_Height() - 1);
 	if (coord) 
 	{
 		//shadow = (!Map[cell].IsMapped && !Debug_Unshroud);
 		shadow = (!Map[cell].Is_Mapped(PlayerPtr) && !Debug_Unshroud);		// Use PlayerPtr since we won't be rendering in MP. ST - 8/6/2019 10:49AM
-		x -= Map.TacPixelX;
-		y -= Map.TacPixelY;
+		//x -= Map.TacPixelX;
+		//y -= Map.TacPixelY;
 
 		/*
 		** Cause any displayed cursor to move along with the mouse cursor.
@@ -2960,7 +2995,7 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			object = Map.Close_Object(x, y);
 
 			/*
 			**	Special case check to ignore cloaked object if not owned by the player.
@@ -3108,7 +3143,7 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 		**	intercepted and possible rubber-band mode is flagged.
 		*/
 		if (flags & LEFTRELEASE) {
-			Map.Mouse_Left_Release(cell, screenX, screenY, object, action);
+			Map.Mouse_Left_Release(cell, x, y, object, action);
 		}
 
 		/*
@@ -3119,7 +3154,7 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 		*/
 		if (!edge && (flags & LEFTPRESS)) {
 			Map.Mouse_Left_Up(cell, shadow, object, action);
-			Map.Mouse_Left_Press(screenX, screenY);
+			Map.Mouse_Left_Press(x, y);
 		}
 
 		/*
@@ -3128,7 +3163,7 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 		**	and flag the map to redraw it.
 		*/
 		if (flags & LEFTHELD) {
-			Map.Mouse_Left_Held(screenX, screenY);
+			Map.Mouse_Left_Held(x, y);
 		}
 	}
 
@@ -3187,7 +3222,10 @@ int DisplayClass::TacticalClass::Selection_At_Mouse(unsigned flags, KeyNumType &
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			int screenx = UserInput.Mouse.X;
+			int screeny = UserInput.Mouse.Y;
+			Map.Pixel_To_Zoom(screenx, screeny);
+			object = Map.Close_Object(screenx, screeny);
 		}
 
 		if (object != nullptr)
@@ -3266,7 +3304,10 @@ int DisplayClass::TacticalClass::Command_Object(unsigned flags, KeyNumType & key
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			int screenx = UserInput.Mouse.X;
+			int screeny = UserInput.Mouse.Y;
+			Map.Pixel_To_Zoom(screenx, screeny);
+			object = Map.Close_Object(screenx, screeny);
 		}
 
 		if (CurrentObject.Count()) {

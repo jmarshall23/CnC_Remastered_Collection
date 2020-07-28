@@ -70,6 +70,14 @@ struct CellCache_t {
 	CellClass* ptr;
 };
 
+struct CellDisplayCache_t {
+	CellDisplayCache_t() {
+		ptr = NULL;
+		lastFrameRendered = 0;
+	}
+	CellClass* ptr;
+	int lastFrameRendered;
+};
 
 class DisplayClass: public MapClass
 {
@@ -222,7 +230,6 @@ class DisplayClass: public MapClass
 		*/
 		virtual void Code_Pointers(void);
 		virtual void Decode_Pointers(void);
-
 	protected:
 		virtual void Mouse_Right_Press(void);
 		virtual void Mouse_Left_Press(int x, int y);
@@ -270,7 +277,7 @@ class DisplayClass: public MapClass
 
 	protected:
 		void CacheVisibleCells(void);
-		CellCache_t* cellDisplayCache;
+		CellCache_t* cellDisplayCache; // Potential Visible Cells.
 		int numCachedDisplayCells;
 
 		/*
@@ -354,7 +361,9 @@ public:		//ST - 1/21/2019 11:59AM
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
 		unsigned char SaveLoadPadding[1024];
-
+public:
+		// Stored visible cells for fast lookup.
+		static CellDisplayCache_t visibleCellTable[MAP_CELL_W][MAP_CELL_H];
 };
 
 

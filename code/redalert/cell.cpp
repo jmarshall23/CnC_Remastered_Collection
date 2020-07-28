@@ -136,6 +136,7 @@ CellClass::CellClass(void) :
 	x_world_pos = 0;
 	y_world_pos = 0;
 	bigOverlay = NULL;
+	debug_select = 0;
 
 	for (int zone = MZONE_FIRST; zone < MZONE_COUNT; zone++) {
 		Zones[zone] = 0;
@@ -1182,13 +1183,16 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			*/
 			if (ttype->Get_Image_Data()) {
 // jmarshall - hd image should always be valid even if loading legacy assets
-				x_screen_pos = x;
-				y_screen_pos = y;
-				ConvertCoordsToIsometric(x_screen_pos, y_screen_pos);
-				lastRenderX = x_screen_pos;
-				lastRenderY = y_screen_pos;
 				int ticon = icon;
+				if (debug_select == g_startFrameTime) {
+					GL_SetColor(1.0f, 0.0f, 0.0f);
+				}
+
 				LogicPage->Draw_Stamp(ttype->Get_HDImage_Data(), icon, x_screen_pos, y_screen_pos, NULL, WINDOW_TACTICAL);
+
+				if (debug_select == g_startFrameTime) {
+					GL_SetColor(1.0f, 1.0f, 1.0f);
+				}
 // jmarshall end
 				//if (remap) {
 				//	LogicPage->Remap(x+Map.TacPixelX, y+Map.TacPixelY, ICON_PIXEL_W, ICON_PIXEL_H, remap);
@@ -1211,10 +1215,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			**	Redraw any smudge.
 			*/
 			if (Smudge != SMUDGE_NONE) {
-				int xx = x;
-				int yy = y;
-				ConvertCoordsToIsometric(xx, yy);
-				SmudgeTypeClass::As_Reference(Smudge).Draw_It(xx, yy, SmudgeData);
+				SmudgeTypeClass::As_Reference(Smudge).Draw_It(lastRenderX, lastRenderY, SmudgeData);
 			}
 
 			/*
@@ -1222,11 +1223,8 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			*/
 			if (Overlay != OVERLAY_NONE) {
 				OverlayTypeClass const & otype = OverlayTypeClass::As_Reference(Overlay);
-				int xx = x;
-				int yy = y;
-				ConvertCoordsToIsometric(xx, yy);
 				IsTheaterShape = (bool)otype.IsTheater;	//Tell Build_Frame if this overlay is theater specific
-				CC_Draw_Shape(otype.Get_Image_Data(), OverlayData, (xx+(CELL_PIXEL_W>>1)), (yy+(CELL_PIXEL_H>>1)), WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL|SHAPE_GHOST, NULL, DisplayClass::UnitShadow);
+				CC_Draw_Shape(otype.Get_Image_Data(), OverlayData, (lastRenderX +(CELL_PIXEL_W>>1)), (lastRenderY+(CELL_PIXEL_H>>1)), WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL|SHAPE_GHOST, NULL, DisplayClass::UnitShadow);
 				IsTheaterShape = false;
 			}
 
@@ -1294,19 +1292,13 @@ void CellClass::Draw_It(int x, int y, bool objects)
 				**	Draw the hash-mark cursor:
 				*/
 				{
-					int xx = x;
-					int yy = y;
-					ConvertCoordsToIsometric(xx, yy);
-					lastRenderX = xx;
-					lastRenderY = yy;
-
 					if (Map.ProximityCheck && Is_Clear_To_Build(loco)) {
 						//LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 0, xx, yy, NULL, WINDOW_TACTICAL);
-						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[0], 0, xx, yy, WINDOW_TACTICAL, SHAPE_NORMAL);
+						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[0], 0, lastRenderX, lastRenderY, WINDOW_TACTICAL, SHAPE_NORMAL);
 					}
 					else {
 						//LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 2, xx, yy, NULL, WINDOW_TACTICAL);
-						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[2], 0, xx, yy, WINDOW_TACTICAL, SHAPE_NORMAL);
+						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[2], 0, lastRenderX, lastRenderY, WINDOW_TACTICAL, SHAPE_NORMAL);
 					}
 				}
 
@@ -1329,12 +1321,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 									(Cell_Y(cell) - Cell_Y(Map.ZoneCell + Map.ZoneOffset)) *
 									tptr->Width;
 // jmarshall - hd image should always be valid even if loading legacy assets
-								int xx = x;
-								int yy = y;
-								ConvertCoordsToIsometric(xx, yy);
-								lastRenderX = xx;
-								lastRenderY = yy;
-								LogicPage->Draw_Stamp(tptr->Get_HDImage_Data(), icon, xx, yy, NULL, WINDOW_TACTICAL);
+								LogicPage->Draw_Stamp(tptr->Get_HDImage_Data(), icon, lastRenderX, lastRenderY, NULL, WINDOW_TACTICAL);
 // jmarshall end
 							}
 							break;
@@ -1345,10 +1332,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 						*/
 						case RTTI_OVERLAYTYPE:
 							{
-								int xx = x;
-								int yy = y;
-								ConvertCoordsToIsometric(xx, yy);
-								OverlayTypeClass::As_Reference(((OverlayTypeClass*)Map.PendingObject)->Type).Draw_It(xx, yy, OverlayData);
+								OverlayTypeClass::As_Reference(((OverlayTypeClass*)Map.PendingObject)->Type).Draw_It(lastRenderX, lastRenderY, OverlayData);
 							}
 							break;
 
@@ -1356,7 +1340,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 						**	Draw a smudge
 						*/
 						case RTTI_SMUDGETYPE:
-							SmudgeTypeClass::As_Reference(((SmudgeTypeClass *)Map.PendingObject)->Type).Draw_It(x, y, 0);
+							SmudgeTypeClass::As_Reference(((SmudgeTypeClass *)Map.PendingObject)->Type).Draw_It(lastRenderX, lastRenderY, 0);
 							break;
 
 						default:

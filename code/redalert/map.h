@@ -62,7 +62,7 @@ class MapClass: public GScreenClass
 		int Intact_Bridge_Count(void) const;
 		bool Base_Region(CELL cell, HousesType & house, ZoneType & zone) const;
 		CELL Nearby_Location(CELL cell, SpeedType speed, int zone=-1, MZoneType check=MZONE_NORMAL, bool checkflagged=false) const;
-		ObjectClass * Close_Object(COORDINATE coord) const;
+		ObjectClass* Close_Object(int screenx, int screeny) const;
 		virtual void Detach(ObjectClass * ) {};
 		int Cell_Region(CELL cell);
 		int Cell_Threat(CELL cell, HousesType house);
