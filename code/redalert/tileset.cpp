@@ -274,6 +274,18 @@ void __cdecl Buffer_Draw_Stamp_Clip2(GraphicViewPortClass& viewport, const void 
                     icon_index = 0;
                 }
 
+				int renderTargetScale = ZoomLevel;
+				if (Debug_Map) {
+					renderTargetScale = 0;
+				}
+
+				double scale = ((((float)ScreenWidth / (float)ScreenHeight) * (float)renderTargetScale) * 0.05) + 1;
+                float xstart_zoom = xstart * scale;
+                float ystart_zoom = ystart * scale;
+
+                if (xstart_zoom >= ScreenWidth || ystart_zoom >= ScreenHeight)
+                    return;
+
                //GL_SetClipRect(xstart, ystart, blit_width, blit_height);
                 GL_RenderImage(iconImage, xstart, ystart, blit_width, blit_height, 0, icon_index);
                //GL_ResetClipRect();

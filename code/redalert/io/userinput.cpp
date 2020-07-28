@@ -132,7 +132,7 @@ void UserInputClass::Process_Input(KeyNumType& key, int& flags)
 
 				if (state[SDL_SCANCODE_F6]) {
 					ZoomLevel++;
-					ZoomLevel = min(ZoomLevel, 6);
+					ZoomLevel = min(ZoomLevel, 7);
 					break;
 				}
 
