@@ -64,7 +64,6 @@ int MapEditClass::Select_Object(void)
 {
 	ObjectClass	* object=NULL;		// Generic object clicked on.
 	int			x,y;
-	CELL			cell;					// Cell that was selected.
 	int			rc=0;
 
 	/*
@@ -73,24 +72,7 @@ int MapEditClass::Select_Object(void)
 	x = Keyboard->MouseQX;
 	y = Keyboard->MouseQY;
 
-	/*
-	**	Get cell for x,y
-	*/
-	cell = Click_Cell_Calc(x, y);
-	if(cell == -1) {
-		return -1;
-	}
-
-	/*
-	**	Convert x,y to offset from cell upper-left
-	*/
-	x = (x - TacPixelX) % ICON_PIXEL_W;
-	y = (y - TacPixelY) % ICON_PIXEL_H;
-
-	/*
-	**	Get object at that x,y
-	*/
-	object = Cell_Object(cell, x, y);
+	object = Map.Close_Object(x, y);
 
 	/*
 	**	If no object, unselect the current one
