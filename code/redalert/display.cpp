@@ -4099,7 +4099,7 @@ void DisplayClass::Set_Tactical_Position(COORDINATE coord)
 	int yy = (int)Coord_Y(coord); // - (int)Cell_To_Lepton(MapCellY);
 
 //	Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth) + GlyphXClientSidebarWidthInLeptons, Cell_To_Lepton(MapCellHeight));		// Needed to accomodate Glyphx client sidebar. ST - 4/12/2019 5:29PM
-	//Confine_Rect(&xx, &yy, 0, 0, Cell_To_Lepton(MapCellWidth*2), Cell_To_Lepton(MapCellHeight*2));
+	Confine_Rect(&xx, &yy, 0, 0, Cell_To_Lepton(MapCellWidth), Cell_To_Lepton(MapCellHeight));
 	coord = XY_Coord(xx, yy);
 
 	if (ScenarioInit) {
@@ -4396,40 +4396,16 @@ COORDINATE DisplayClass::Center_Map(COORDINATE center)
 	bool centerit = false;
 
 	if (CurrentObject.Count()) {
-
-		for (int index = 0; index < CurrentObject.Count(); index++) {
-			COORDINATE coord = CurrentObject[index]->Center_Coord();
-
-			x += Coord_X(coord);
-			y += Coord_Y(coord);
-		}
-
-		x /= CurrentObject.Count();
-		y /= CurrentObject.Count();
-		centerit = true;
+		center = CurrentObject[0]->Render_Coord();
 	}
 
-	if (center != 0L) {
-		x = Coord_X(center);
-		y = Coord_Y(center);
-		centerit = true;
-	}
+	// Not sure why the math works here with flipped lepton dimensions?
+	int xx = Coord_X(center) - (MapCellX * CELL_LEPTON_H);
+	int yy = Coord_Y(center) - (MapCellY * CELL_LEPTON_W);
 
-	if (centerit) {
-		center = XY_Coord(x, y);
+	Set_Tactical_Position(XY_Coord(xx, yy));
 
-		x = x - (int)TacLeptonWidth/2;
-		if (x < Cell_To_Lepton(MapCellX)) x = Cell_To_Lepton(MapCellX);
-
-		y = y - (int)TacLeptonHeight/2;
-		if (y < Cell_To_Lepton(MapCellY)) y = Cell_To_Lepton(MapCellY);
-
-		Set_Tactical_Position(XY_Coord(x, y));
-
-		return center;
-	}
-
-	return 0;
+	return center;
 }
 
 
