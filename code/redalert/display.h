@@ -48,7 +48,7 @@ class BigOverlay;
 #define	ICON_PIXEL_H			24
 // jmarshall end
 #define	ICON_LEPTON_W			256
-#define	ICON_LEPTON_H			128
+#define	ICON_LEPTON_H			256
 #define	CELL_PIXEL_W	 		ICON_PIXEL_W
 #define	CELL_PIXEL_H			ICON_PIXEL_H
 #define	CELL_LEPTON_W			ICON_LEPTON_W
