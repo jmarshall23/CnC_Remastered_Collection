@@ -425,7 +425,7 @@ void RadarClass::Draw_It(bool forced)
 			} else {
 				RadarPulse = MFCD::Retrieve(name);
 			}
-		RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike]);
+		RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike % HOUSE_BAD]);
 		#endif
 		_house = PlayerPtr->ActLike;
 	}
