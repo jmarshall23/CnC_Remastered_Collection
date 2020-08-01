@@ -322,6 +322,8 @@ extern int							ScenarioInit;
 extern HouseClass *				PlayerPtr;
 extern PaletteClass 				CCPalette;
 extern void*						CCGlobalOveridePalette;
+extern int							CCPaletteHouseColor;
+extern float						HouseRGBColors[8][3];
 extern PaletteClass 				BlackPalette;
 extern PaletteClass 				WhitePalette;
 extern PaletteClass 				GamePalette;

@@ -504,14 +504,44 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 
 	for (int i = 0; i < Width * Height; i++) {
 		unsigned char c = data[i];
-		if (remap) {
+
+		unsigned char r = 0;
+		unsigned char g = 0;
+		unsigned char b = 0;
+		unsigned char a = 0;
+
+		if (CCGlobalOveridePalette && remap) {
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+			a = 0;
+
+			// Assume we are loading TS palettes.
+			if (c >= 0x10 && c <= 0x1f) {
+				float greyscale = r / 255.0f;
+
+				r = HouseRGBColors[CCPaletteHouseColor][0] * greyscale;
+				g = HouseRGBColors[CCPaletteHouseColor][1] * greyscale;
+				b = HouseRGBColors[CCPaletteHouseColor][2] * greyscale;
+				a = 0;
+			}
+		}
+		else if (remap) {
 			c = remap[c];
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+			a = 0;
+		}
+		else
+		{
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+			a = 0;
 		}
 
-		unsigned char r = ccpalete[(c * 3) + 0] << 2;
-		unsigned char g = ccpalete[(c * 3) + 1] << 2;
-		unsigned char b = ccpalete[(c * 3) + 2] << 2;
-		unsigned char a = 0;
+		
 
 		if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
 			r = 0;

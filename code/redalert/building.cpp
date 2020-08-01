@@ -472,6 +472,17 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	PaletteClass globalPal = CCPalette;
 	if(Class->CustomTheatrePalette[LastTheater] != NULL) {
 		CCGlobalOveridePalette = (void *)Class->CustomTheatrePalette[LastTheater];
+		HouseTypeClass* houseType = House->Class;
+
+		if (houseType->House >= HOUSE_MULTI1) {
+			CCPaletteHouseColor = House->RemapColor;
+		}
+		else if (houseType->House <= HOUSE_TURKEY) {
+			CCPaletteHouseColor = houseType->House;
+		}
+		else {
+			CCPaletteHouseColor = 0;
+		}
 	}
 
 	{

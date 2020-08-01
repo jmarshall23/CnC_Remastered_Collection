@@ -551,12 +551,24 @@ HouseClass * PlayerPtr;
 */
 PaletteClass CCPalette;
 void* CCGlobalOveridePalette = NULL;
+int	CCPaletteHouseColor = 0;
 PaletteClass GamePalette;
 //PaletteClass InGamePalette;
 PaletteClass BlackPalette(RGBClass(0, 0, 0));
 PaletteClass WhitePalette(RGBClass(RGBClass::MAX_VALUE, RGBClass::MAX_VALUE, RGBClass::MAX_VALUE));
 PaletteClass OriginalPalette;
 PaletteClass ScorePalette;
+
+float HouseRGBColors[8][3] = {
+	{ 255.0f, 223.0f, 94.0f },
+	{160,164,200 }, // Allies Blue
+	{255.0f, 20.0f, 20.0f },	
+	{140, 244, 140 }, // Green
+	{255.0f, 155.0f, 0.0f},
+	{92, 192, 164},
+	{204, 184, 176},
+	{170, 93, 71}
+};
 
 
 /***************************************************************************
