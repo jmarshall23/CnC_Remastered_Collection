@@ -3309,8 +3309,8 @@ void BuildingTypeClass::One_Time(void)
 	WarFactoryOverlay = MFCD::Retrieve(fullname);
 	WarFactoryHDOverlay = LoadHDImage(fullname, specialNumHDImages, false);
 	if (WarFactoryOverlay != NULL && WarFactoryHDOverlay != NULL) {
-		int width = Get_Build_Frame_Width(WarFactoryOverlay);
-		int height = Get_Build_Frame_Height(WarFactoryOverlay);
+		int width = Get_Build_Frame_Width(WarFactoryOverlay, 0);
+		int height = Get_Build_Frame_Height(WarFactoryOverlay, 0);
 
 		for (int d = 0; d < specialNumHDImages; d++)
 		{
@@ -3585,8 +3585,8 @@ void BuildingTypeClass::Init(TheaterType theater)
 					}
 
 					if (classptr->ImageData != NULL && classptr->HDImageData != NULL) {
-						int width = Get_Build_Frame_Width(classptr->ImageData);
-						int height = Get_Build_Frame_Height(classptr->ImageData);
+						int width = Get_Build_Frame_Width(classptr->ImageData, 0);
+						int height = Get_Build_Frame_Height(classptr->ImageData, 0);
 
 						classptr->HDImageData->renderwidth[0] = width;
 						classptr->HDImageData->renderheight[0] = height;
