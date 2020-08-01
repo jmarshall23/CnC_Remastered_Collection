@@ -726,6 +726,7 @@ unsigned short Get_Build_Frame_Count(void const *dataptr);
 bool Get_Build_TiberianSun_Format(void const* dataptr);
 unsigned short Get_Build_Frame_X(void const *dataptr, int frame);
 unsigned short Get_Build_Frame_Y(void const *dataptr, int frame);
+bool Get_Build_Is_Compressed(void const* dataptr, int frame);
 unsigned short Get_Build_Frame_Width(void const *dataptr, int frame);
 unsigned short Get_Build_Frame_Height(void const *dataptr, int frame);
 bool Get_Build_Frame_Palette(void const *dataptr, void *palette);

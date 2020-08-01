@@ -480,9 +480,18 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	else {
 		Techno_Draw_Object(shapefile, Shape_Number(), x, y, window);
 	}
+// jmarshall end
+	
+// jmarshall idle animation
+	if (Class->IdleAnimShape != NULL) {
+		int shapeNum = animFrameNum;
+		shapeNum = shapeNum % Get_Build_Frame_Count(Class->IdleAnimShape);
+		Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
+	}
 
 	CCGlobalOveridePalette = NULL;
 // jmarshall end
+
 	IsTheaterShape = false;
 
 	/*

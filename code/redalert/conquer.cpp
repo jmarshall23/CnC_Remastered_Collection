@@ -3696,8 +3696,9 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 
 	if (shapefile != NULL && shapenum != -1) {
 
-		int width = Get_Build_Frame_Width(shapefile, shapenum);
-		int height = Get_Build_Frame_Height(shapefile, shapenum);
+		// With TS tiles, the smaller image buffer gets blit into a buffer that's the size of the entire image.
+		int width = Get_Build_Frame_Width(shapefile, -1);
+		int height = Get_Build_Frame_Height(shapefile, -1);
 
 #ifdef NEVER
 		/*

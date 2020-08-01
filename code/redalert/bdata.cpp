@@ -2946,6 +2946,7 @@ BuildingTypeClass::BuildingTypeClass(
 {
 
 	memset(CustomTheatrePalette, 0, sizeof(CustomTheatrePalette));
+	IdleAnimShape = NULL;
 
 	Anims[BSTATE_CONSTRUCTION].Start = 0;
 	Anims[BSTATE_CONSTRUCTION].Count = 1;
@@ -4002,6 +4003,9 @@ bool BuildingTypeClass::Flush_For_Placement(CELL cell, HouseClass * house)  cons
  *=============================================================================================*/
 bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 {
+	char customPalName[512];
+	char idleAnimName[512];
+
 	if (TechnoTypeClass::Read_INI(ini)) {
 		Speed = ini.Get_Bool(Name(), "WaterBound", (Speed == SPEED_FLOAT)) ? SPEED_FLOAT : SPEED_NONE;
 		Capacity = ini.Get_Int(Name(), "Storage", Capacity);
@@ -4011,9 +4015,7 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 		IsBibbed = ini.Get_Bool(Name(), "Bib", IsBibbed);
 		IsUnsellable = ini.Get_Bool(Name(), "Unsellable", IsUnsellable);
 		IsBase = ini.Get_Bool(Name(), "BaseNormal", IsBase);
-		Power = ini.Get_Int(Name(), "Power", (Power > 0) ? Power : -Drain);
-
-		char customPalName[512];
+		Power = ini.Get_Int(Name(), "Power", (Power > 0) ? Power : -Drain);		
 		
 		if(ini.Get_String(Name(), "Snow", "", &customPalName[0], sizeof(customPalName)) > 0) {
 			CustomTheatrePalette[THEATER_SNOW] = MFCD::Retrieve(customPalName);
@@ -4022,6 +4024,9 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 			CustomTheatrePalette[THEATER_TEMPERATE] = MFCD::Retrieve(customPalName);
 		}
 
+		if (ini.Get_String(Name(), "IdleAnim", "", &idleAnimName[0], sizeof(idleAnimName)) > 0) {
+			IdleAnimShape = MFCD::Retrieve(idleAnimName);
+		}
 
 		if (Power < 0) {
 			Drain = -Power;

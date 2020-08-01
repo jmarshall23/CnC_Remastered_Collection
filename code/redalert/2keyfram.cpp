@@ -554,6 +554,17 @@ unsigned short Get_Build_Frame_Y(void const *dataptr, int frame)
 	return(0);
 }
 
+bool Get_Build_Is_Compressed(void const *dataptr, int frame) {
+	if(dataptr) {
+		if (Get_Build_TS_Shape(dataptr)) {
+			return Get_Build_TS_FrameInfo(dataptr, frame)->Flags & 2;
+		}
+
+		return false;
+	}
+
+	return false;
+}
 
 /***********************************************************************************************
  * Get_Build_Frame_Width -- Fetches the width of the shape image.                              *
@@ -574,6 +585,11 @@ unsigned short Get_Build_Frame_Width(void const *dataptr, int frame)
 {
 	if (dataptr) {
 		if(Get_Build_TS_Shape(dataptr)) {
+			if(frame == -1) {
+				const TiberianSunShapeHeader* ts = (const TiberianSunShapeHeader*)dataptr;
+				return ts->width;
+			}
+
 			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameWidth;
 		}
 
@@ -581,7 +597,6 @@ unsigned short Get_Build_Frame_Width(void const *dataptr, int frame)
 	}
 	return(0);
 }
-
 
 /***********************************************************************************************
  * Get_Build_Frame_Height -- Fetches the height of the shape image.                            *
@@ -602,6 +617,10 @@ unsigned short Get_Build_Frame_Height(void const *dataptr, int frame)
 {
 	if (dataptr) {
 		if (Get_Build_TS_Shape(dataptr)) {
+			if (frame == -1) {
+				const TiberianSunShapeHeader* ts = (const TiberianSunShapeHeader*)dataptr;
+				return ts->height;
+			}
 			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameHeight;
 		}
 		return(((RedAlertShapeHeader const *)dataptr)->height);

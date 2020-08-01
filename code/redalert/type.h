@@ -819,6 +819,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 		static Image_t* WarFactoryHDOverlay;
 
 		const void* CustomTheatrePalette[3];
+		const void* IdleAnimShape;
 	private:
 
 		/*

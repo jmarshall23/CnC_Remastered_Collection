@@ -19,6 +19,7 @@
 Originally this file came from Chronoshift, and we still have some legacy bits from their code in here,
 however this file has been **heavily** modified by IceColdDuke(Justin Marshall) to render with OpenGL.
 
+We also added Tiberian Sun SHP format render support, this code uses some code from XCC.
 ============================
 */
 
@@ -41,6 +42,8 @@ using std::memcpy;
 #define BIGSHP_BUFFER_GROW 2000000
 
 #define SHAPE_TRANSPARENT 0x40
+
+char shape_ts_global[2048 * 2048];
 
 struct ShapeHeaderStruct
 {
@@ -212,6 +215,23 @@ int TiberianSunSHPDecode(const byte* s, byte* d, int cx, int cy)
 	return w - d;
 }
 
+INT_PTR Build_Full_Frame(int frameX, int frameY, int frameWidth, int frameHeight, int imageWidth, int imageHeight, byte *uncompressedBuffer) {
+    if (frameWidth == imageWidth && frameHeight == imageHeight) {
+        return (INT_PTR)uncompressedBuffer;
+    }
+
+    memset(shape_ts_global, 0, imageWidth * imageHeight);
+
+    byte* w = (byte *)shape_ts_global + frameX + imageWidth * frameY;
+    for (int y = 0; y < frameHeight; y++)
+    {
+        memcpy(w, uncompressedBuffer, frameWidth);
+        uncompressedBuffer += frameWidth;
+        w += imageWidth;
+    }
+
+    return (INT_PTR)shape_ts_global;
+}
 
 INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffptr) {
     // Check to see if we need to render a Tiberian Sun SHP file.
@@ -221,10 +241,20 @@ INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffp
         }
 
         byte* frame_offset = (byte *)Get_Build_TS_FrameOffset(dataptr, framenumber);
-        int frameX = Get_Build_Frame_Width(dataptr, framenumber);
-        int frameY = Get_Build_Frame_Height(dataptr, framenumber);
-        TiberianSunSHPDecode(frame_offset, (byte *)buffptr, frameX, frameY);
-        return (INT_PTR)buffptr;
+        int frameWidth = Get_Build_Frame_Width(dataptr, framenumber);
+        int frameHeight = Get_Build_Frame_Height(dataptr, framenumber);
+
+        int frame_X = Get_Build_Frame_X(dataptr, framenumber);
+        int frame_Y = Get_Build_Frame_Y(dataptr, framenumber);
+
+        int imageWidth = Get_Build_Frame_Width(dataptr, -1);
+        int imageHeight = Get_Build_Frame_Height(dataptr, -1);
+        if (Get_Build_Is_Compressed(dataptr, framenumber)) {
+            TiberianSunSHPDecode(frame_offset, (byte*)buffptr, frameWidth, frameHeight);
+            return (INT_PTR)Build_Full_Frame(frame_X, frame_Y, frameWidth, frameHeight, imageWidth, imageHeight, (byte *)buffptr);
+        }
+
+        return (INT_PTR)Build_Full_Frame(frame_X, frame_Y, frameWidth, frameHeight, imageWidth, imageHeight, frame_offset);
     }
 
     // Regular Red Alert sprite.
