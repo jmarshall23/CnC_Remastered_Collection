@@ -474,19 +474,34 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 		CCGlobalOveridePalette = (void *)Class->CustomTheatrePalette[LastTheater];
 	}
 
-	if (hdimage != NULL) {
-		Techno_Draw_Object_HD(hdimage, Shape_Number(), x, y, window);
-	}
-	else {
-		Techno_Draw_Object(shapefile, Shape_Number(), x, y, window);
+	{
+		int animShapeNum = Shape_Number();
+
+		// If we have a seperate activation animation, play that instead of cycling through the frames here.
+		if (BState == BSTATE_ACTIVE && Class->ActiveAnimAnimShape != NULL) {
+			animShapeNum = 0;
+		}
+
+		if (hdimage != NULL) {
+			Techno_Draw_Object_HD(hdimage, animShapeNum, x, y, window);
+		}
+		else {
+			Techno_Draw_Object(shapefile, animShapeNum, x, y, window);
+		}
 	}
 // jmarshall end
 	
-// jmarshall idle animation
+// jmarshall idle/construction animation
 	if (Class->IdleAnimShape != NULL) {
 		int shapeNum = animFrameNum;
 		shapeNum = shapeNum % Get_Build_Frame_Count(Class->IdleAnimShape);
 		Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
+	}
+
+	if (BState == BSTATE_ACTIVE && Class->ActiveAnimAnimShape != NULL) {
+		int shapeNum = Shape_Number();
+		shapeNum = shapeNum % Get_Build_Frame_Count(Class->ActiveAnimAnimShape);
+		Techno_Draw_Object(Class->ActiveAnimAnimShape, shapeNum, x, y, window);
 	}
 
 	CCGlobalOveridePalette = NULL;

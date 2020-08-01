@@ -820,6 +820,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 
 		const void* CustomTheatrePalette[3];
 		const void* IdleAnimShape;
+		const void* ActiveAnimAnimShape;
 	private:
 
 		/*

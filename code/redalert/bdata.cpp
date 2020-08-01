@@ -2947,6 +2947,7 @@ BuildingTypeClass::BuildingTypeClass(
 
 	memset(CustomTheatrePalette, 0, sizeof(CustomTheatrePalette));
 	IdleAnimShape = NULL;
+	ActiveAnimAnimShape = NULL;
 
 	Anims[BSTATE_CONSTRUCTION].Start = 0;
 	Anims[BSTATE_CONSTRUCTION].Count = 1;
@@ -4005,6 +4006,7 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 {
 	char customPalName[512];
 	char idleAnimName[512];
+	char ConstructAnimName[512];
 
 	if (TechnoTypeClass::Read_INI(ini)) {
 		Speed = ini.Get_Bool(Name(), "WaterBound", (Speed == SPEED_FLOAT)) ? SPEED_FLOAT : SPEED_NONE;
@@ -4026,6 +4028,10 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 
 		if (ini.Get_String(Name(), "IdleAnim", "", &idleAnimName[0], sizeof(idleAnimName)) > 0) {
 			IdleAnimShape = MFCD::Retrieve(idleAnimName);
+		}
+
+		if (ini.Get_String(Name(), "ActiveAnim", "", &ConstructAnimName[0], sizeof(ConstructAnimName)) > 0) {
+			ActiveAnimAnimShape = MFCD::Retrieve(ConstructAnimName);
 		}
 
 		if (Power < 0) {
