@@ -661,7 +661,7 @@ static BuildingTypeClass const ClassFlameTurret(
 static BuildingTypeClass const ClassConst(
 	STRUCT_CONST,
 	TXT_CONST_YARD,				// NAME:			Short name of the structure.
-	"FACT",							// NAME:			Short name of the structure.
+	"EGCNST",							// NAME:			Short name of the structure.
 	FACING_NONE,					// Foundation direction from center of building.
 	XYP_COORD(0,0),				// Exit point for produced units.
 	REMAP_ALTERNATE,				// Sidebar remap logic.
@@ -2945,6 +2945,8 @@ BuildingTypeClass::BuildingTypeClass(
 	BuildupData(0)
 {
 
+	memset(CustomTheatrePalette, 0, sizeof(CustomTheatrePalette));
+
 	Anims[BSTATE_CONSTRUCTION].Start = 0;
 	Anims[BSTATE_CONSTRUCTION].Count = 1;
 	Anims[BSTATE_CONSTRUCTION].Rate = 0;
@@ -4010,6 +4012,17 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 		IsUnsellable = ini.Get_Bool(Name(), "Unsellable", IsUnsellable);
 		IsBase = ini.Get_Bool(Name(), "BaseNormal", IsBase);
 		Power = ini.Get_Int(Name(), "Power", (Power > 0) ? Power : -Drain);
+
+		char customPalName[512];
+		
+		if(ini.Get_String(Name(), "Snow", "", &customPalName[0], sizeof(customPalName)) > 0) {
+			CustomTheatrePalette[THEATER_SNOW] = MFCD::Retrieve(customPalName);
+		}
+		if (ini.Get_String(Name(), "Temperate", "", &customPalName[0], sizeof(customPalName)) > 0) {
+			CustomTheatrePalette[THEATER_TEMPERATE] = MFCD::Retrieve(customPalName);
+		}
+
+
 		if (Power < 0) {
 			Drain = -Power;
 			Power = 0;

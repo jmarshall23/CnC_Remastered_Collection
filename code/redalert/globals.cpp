@@ -550,6 +550,7 @@ HouseClass * PlayerPtr;
 **	black.
 */
 PaletteClass CCPalette;
+void* CCGlobalOveridePalette = NULL;
 PaletteClass GamePalette;
 //PaletteClass InGamePalette;
 PaletteClass BlackPalette(RGBClass(0, 0, 0));

@@ -818,6 +818,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 		static void const * WarFactoryOverlay;
 		static Image_t* WarFactoryHDOverlay;
 
+		const void* CustomTheatrePalette[3];
 	private:
 
 		/*

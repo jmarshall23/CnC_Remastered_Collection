@@ -216,6 +216,10 @@ int TiberianSunSHPDecode(const byte* s, byte* d, int cx, int cy)
 INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffptr) {
     // Check to see if we need to render a Tiberian Sun SHP file.
     if(Get_Build_TS_Shape(dataptr)) {
+        if(framenumber >= Get_Build_Frame_Count(dataptr)) {
+            framenumber = 0;
+        }
+
         byte* frame_offset = (byte *)Get_Build_TS_FrameOffset(dataptr, framenumber);
         int frameX = Get_Build_Frame_Width(dataptr, framenumber);
         int frameY = Get_Build_Frame_Height(dataptr, framenumber);

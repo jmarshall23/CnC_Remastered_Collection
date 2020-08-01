@@ -489,8 +489,14 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 		}
 	}
 
-	if (ccpalete == NULL)
-		ccpalete = (unsigned char*)CCPalette.Get_Data();
+	if (ccpalete == NULL) {
+		if (CCGlobalOveridePalette) {
+			ccpalete = (unsigned char *)CCGlobalOveridePalette;
+		}
+		else {
+			ccpalete = (unsigned char*)CCPalette.Get_Data();
+		}
+	}
 
 
 	Image_t* image = new Image_t();

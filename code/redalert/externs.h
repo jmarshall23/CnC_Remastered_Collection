@@ -321,6 +321,7 @@ extern bool							SpecialFlag;
 extern int							ScenarioInit;
 extern HouseClass *				PlayerPtr;
 extern PaletteClass 				CCPalette;
+extern void*						CCGlobalOveridePalette;
 extern PaletteClass 				BlackPalette;
 extern PaletteClass 				WhitePalette;
 extern PaletteClass 				GamePalette;

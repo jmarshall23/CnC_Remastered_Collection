@@ -4419,6 +4419,10 @@ void TechnoClass::Techno_Draw_Object(void const * shapefile, int shapenum, int x
 		void const * remap = Remap_Table();
 		void const * shadow = Map.UnitShadow;
 
+		if (shapenum >= Get_Build_Frame_Count(shapefile)) {
+			shapenum = 0;
+		}
+
 #ifdef PARTIAL
 		/*
 		**	Create a minimum shape rectangle if one hasn't already been

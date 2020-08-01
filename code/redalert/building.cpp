@@ -468,13 +468,20 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	**	Actually draw the building shape.
 	*/
 	IsTheaterShape = Class->IsTheater;	//Let Build_Frame know if this is a theater specific shape
-// jmarshall - added HD support
+// jmarshall - added HD support & custom palette support.
+	PaletteClass globalPal = CCPalette;
+	if(Class->CustomTheatrePalette[LastTheater] != NULL) {
+		CCGlobalOveridePalette = (void *)Class->CustomTheatrePalette[LastTheater];
+	}
+
 	if (hdimage != NULL) {
 		Techno_Draw_Object_HD(hdimage, Shape_Number(), x, y, window);
 	}
 	else {
 		Techno_Draw_Object(shapefile, Shape_Number(), x, y, window);
 	}
+
+	CCGlobalOveridePalette = NULL;
 // jmarshall end
 	IsTheaterShape = false;
 
