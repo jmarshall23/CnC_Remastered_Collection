@@ -18,8 +18,8 @@ Image_t* SidebarEditor::LoadEditorImage(const char* name) {
 		return NULL;
 	}
 
-	int width = Get_Build_Frame_Width(shapefile);
-	int height = Get_Build_Frame_Height(shapefile);	
+	int width = Get_Build_Frame_Width(shapefile, 0);
+	int height = Get_Build_Frame_Height(shapefile, 0);	
 	unsigned char *shape_pointer = (unsigned char*)Build_Frame(shapefile, 0, _ShapeBuffer);
 	short frameCount = Get_Build_Frame_Count(shapefile);
 

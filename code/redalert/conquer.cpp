@@ -3366,8 +3366,8 @@ void const * Get_Radar_Icon(void const * shapefile, int shapenum, int frames, in
 	** Get the pixel width and height of the frame we built.  This will
 	** be used to extract icons and build pixels.
 	*/
-	int pixel_width  = Get_Build_Frame_Width( shapefile );
-	int pixel_height = Get_Build_Frame_Height( shapefile );
+	int pixel_width  = Get_Build_Frame_Width( shapefile, shapenum);
+	int pixel_height = Get_Build_Frame_Height( shapefile, shapenum);
 
 	/*
 	** Find the width and height in icons, adjust these by half an
@@ -3467,8 +3467,8 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile);
-		int height = Get_Build_Frame_Height(shapefile);
+		int width = Get_Build_Frame_Width(shapefile, shapenum);
+		int height = Get_Build_Frame_Height(shapefile, shapenum);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, rotation, virtualscale, NULL, HOUSE_NONE);
 		return;
 	}
@@ -3479,8 +3479,8 @@ void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapen
 void CC_Draw_Shape(const ObjectClass *object, const char *shape_file_name, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale, char override_owner)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile);
-		int height = Get_Build_Frame_Height(shapefile);
+		int width = Get_Build_Frame_Width(shapefile, shapenum);
+		int height = Get_Build_Frame_Height(shapefile, shapenum);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, rotation, virtualscale, shape_file_name, override_owner);
 		return;
 	}
@@ -3696,8 +3696,8 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 
 	if (shapefile != NULL && shapenum != -1) {
 
-		int width = Get_Build_Frame_Width(shapefile);
-		int height = Get_Build_Frame_Height(shapefile);
+		int width = Get_Build_Frame_Width(shapefile, shapenum);
+		int height = Get_Build_Frame_Height(shapefile, shapenum);
 
 #ifdef NEVER
 		/*
@@ -3854,8 +3854,8 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	shape = (char *)_ShapeBuffer;
 #endif
 
-	int width = Get_Build_Frame_Width(shapedata);
-	int height = Get_Build_Frame_Height(shapedata);
+	int width = Get_Build_Frame_Width(shapedata, shapenum);
+	int height = Get_Build_Frame_Height(shapedata, shapenum);
 
 	rect.X = 0;
 	rect.Y = 0;

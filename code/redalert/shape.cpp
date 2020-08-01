@@ -180,8 +180,51 @@ void* Build_Frame2(void* shape, uint16_t frame, void* buffer)
 	return buffer;
 }
 
+int TiberianSunSHPDecode(const byte* s, byte* d, int cx, int cy)
+{
+	const byte* r = s;
+	byte* w = d;
+	for (int y = 0; y < cy; y++)
+	{
+		int count = *reinterpret_cast<const unsigned __int16*>(r) - 2;
+		r += 2;
+		int x = 0;
+		while (count--)
+		{
+			int v = *r++;
+			if (v)
+			{
+				x++;
+				*w++ = v;
+			}
+			else
+			{
+				count--;
+				v = *r++;
+				if (x + v > cx)
+					v = cx - x;
+				x += v;
+				while (v--)
+					*w++ = 0;
+			}
+		}
+	}
+	return w - d;
+}
+
+
 INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffptr) {
-	return (INT_PTR)Build_Frame2((void*)dataptr, framenumber, buffptr); // 32 bit to 64 bit issue
+    // Check to see if we need to render a Tiberian Sun SHP file.
+    if(Get_Build_TS_Shape(dataptr)) {
+        byte* frame_offset = (byte *)Get_Build_TS_FrameOffset(dataptr, framenumber);
+        int frameX = Get_Build_Frame_Width(dataptr, framenumber);
+        int frameY = Get_Build_Frame_Height(dataptr, framenumber);
+        TiberianSunSHPDecode(frame_offset, (byte *)buffptr, frameX, frameY);
+        return (INT_PTR)buffptr;
+    }
+
+    // Regular Red Alert sprite.
+    return (INT_PTR)Build_Frame2((void*)dataptr, framenumber, buffptr); // 32 bit to 64 bit issue
 }
 
 // This one appears to deal with the buffered shape data

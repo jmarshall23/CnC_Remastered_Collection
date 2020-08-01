@@ -51,7 +51,25 @@ typedef struct {
 	unsigned short height;
 	unsigned short largest_frame_size;
 	short				flags;
-} KeyFrameHeaderType;
+} RedAlertShapeHeader;
+
+typedef struct {
+	unsigned short iden; // Always 0!
+	unsigned short width; // Width of the frames.
+	unsigned short height; // Height of the frames.
+	unsigned short NumFrames;
+} TiberianSunShapeHeader;
+
+typedef struct {
+	unsigned short FrameX;
+	unsigned short FrameY;
+	unsigned short FrameWidth;
+	unsigned short FrameHeight;
+	unsigned int Flags;
+	byte FrameColor[4];
+	unsigned int Reserved;
+	unsigned int DataOffset;
+} TiberianSunShapeFrameInfo;
 
 #define	INITIAL_BIG_SHAPE_BUFFER_SIZE	(64 * 1024 * 1024)
 #define	THEATER_BIG_SHAPE_BUFFER_SIZE 4000000
@@ -212,7 +230,7 @@ void Check_Use_Compressed_Shapes (void)
 //	unsigned long offcurr, off16, offdiff;
 //#endif
 //	unsigned long offset[SUBFRAMEOFFS];
-//	KeyFrameHeaderType *keyfr;
+//	RedAlertShapeHeader *keyfr;
 //	unsigned short buffsize, currframe, subframe;
 //	unsigned long length = 0;
 //	char frameflags;
@@ -231,7 +249,7 @@ void Check_Use_Compressed_Shapes (void)
 //	// look at header then check that frame to build is not greater
 //	// than total frames
 //	//
-//	keyfr = (KeyFrameHeaderType *) dataptr;
+//	keyfr = (RedAlertShapeHeader *) dataptr;
 //
 //	if ( framenumber >= keyfr->frames ) {
 //		return(0);
@@ -300,7 +318,7 @@ void Check_Use_Compressed_Shapes (void)
 //	buffsize = keyfr->width * keyfr->height;
 //
 //	// get offset into data
-//	ptr = (char *)Add_Long_To_Pointer( dataptr, (((unsigned long)framenumber << 3) + sizeof(KeyFrameHeaderType)) );
+//	ptr = (char *)Add_Long_To_Pointer( dataptr, (((unsigned long)framenumber << 3) + sizeof(RedAlertShapeHeader)) );
 //	Mem_Copy( ptr, &offset[0], 12L );
 //	frameflags = (char)(offset[0] >> 24);
 //
@@ -318,7 +336,7 @@ void Check_Use_Compressed_Shapes (void)
 //		if ( (frameflags & KF_DELTA) ) {
 //			currframe = (unsigned short)offset[1];
 //
-//			ptr = (char *)Add_Long_To_Pointer( dataptr, (((unsigned long)currframe << 3) + sizeof(KeyFrameHeaderType)) );
+//			ptr = (char *)Add_Long_To_Pointer( dataptr, (((unsigned long)currframe << 3) + sizeof(RedAlertShapeHeader)) );
 //			Mem_Copy( ptr, &offset[0], (long)(SUBFRAMEOFFS * sizeof(unsigned long)) );
 //		}
 //
@@ -388,7 +406,7 @@ void Check_Use_Compressed_Shapes (void)
 //					currframe <= framenumber ) {
 //					Mem_Copy( Add_Long_To_Pointer( dataptr,
 //									(((unsigned long)currframe << 3) +
-//									sizeof(KeyFrameHeaderType)) ),
+//									sizeof(RedAlertShapeHeader)) ),
 //						&offset[0], (long)(SUBFRAMEOFFS * sizeof(unsigned long)) );
 //					subframe = 0;
 //				}
@@ -463,6 +481,27 @@ void Check_Use_Compressed_Shapes (void)
 //	}
 //}
 
+bool Get_Build_TS_Shape(const void *dataptr) {
+	if(dataptr) {
+		const TiberianSunShapeHeader* ts = (const TiberianSunShapeHeader*)dataptr;
+		if(ts->iden == 0) {
+			return true;
+		}
+
+		return false;
+	}
+	return false;
+}
+
+TiberianSunShapeFrameInfo *Get_Build_TS_FrameInfo(const void *dataptr, int frameNum) {
+	const byte* tsptr = (const byte*)dataptr;
+	return (TiberianSunShapeFrameInfo*)((byte*)(tsptr + (sizeof(TiberianSunShapeFrameInfo) * frameNum) + sizeof(TiberianSunShapeHeader)));
+}
+
+void *Get_Build_TS_FrameOffset(const void *dataptr, int framenum) {
+	TiberianSunShapeFrameInfo* frameInfo = Get_Build_TS_FrameInfo(dataptr, framenum);
+	return (void *)(((byte *)dataptr) + frameInfo->DataOffset);
+}
 
 /***********************************************************************************************
  * Get_Build_Frame_Count -- Fetches the number of frames in data block.                        *
@@ -481,25 +520,36 @@ void Check_Use_Compressed_Shapes (void)
 unsigned short Get_Build_Frame_Count(void const *dataptr)
 {
 	if (dataptr) {
-		return(((KeyFrameHeaderType const *)dataptr)->frames);
+		if(Get_Build_TS_Shape(dataptr)) {
+			const TiberianSunShapeHeader* ts = (const TiberianSunShapeHeader*)dataptr;
+			return ts->NumFrames;
+		}
+
+		return(((RedAlertShapeHeader const *)dataptr)->frames);
 	}
 	return(0);
 }
 
 
-unsigned short Get_Build_Frame_X(void const *dataptr)
+unsigned short Get_Build_Frame_X(void const *dataptr, int frame)
 {
 	if (dataptr) {
-		return(((KeyFrameHeaderType const *)dataptr)->x);
+		if (Get_Build_TS_Shape(dataptr)) {
+			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameX;
+		}
+		return(((RedAlertShapeHeader const *)dataptr)->x);
 	}
 	return(0);
 }
 
 
-unsigned short Get_Build_Frame_Y(void const *dataptr)
+unsigned short Get_Build_Frame_Y(void const *dataptr, int frame)
 {
 	if (dataptr) {
-		return(((KeyFrameHeaderType const *)dataptr)->y);
+		if (Get_Build_TS_Shape(dataptr)) {
+			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameY;
+		}
+		return(((RedAlertShapeHeader const *)dataptr)->y);
 	}
 	return(0);
 }
@@ -520,10 +570,14 @@ unsigned short Get_Build_Frame_Y(void const *dataptr)
  * HISTORY:                                                                                    *
  *   06/25/1995 JLB : Commented                                                                *
  *=============================================================================================*/
-unsigned short Get_Build_Frame_Width(void const *dataptr)
+unsigned short Get_Build_Frame_Width(void const *dataptr, int frame)
 {
 	if (dataptr) {
-		return(((KeyFrameHeaderType const *)dataptr)->width);
+		if(Get_Build_TS_Shape(dataptr)) {
+			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameWidth;
+		}
+
+		return(((RedAlertShapeHeader const *)dataptr)->width);
 	}
 	return(0);
 }
@@ -544,10 +598,13 @@ unsigned short Get_Build_Frame_Width(void const *dataptr)
  * HISTORY:                                                                                    *
  *   06/25/1995 JLB : Commented                                                                *
  *=============================================================================================*/
-unsigned short Get_Build_Frame_Height(void const *dataptr)
+unsigned short Get_Build_Frame_Height(void const *dataptr, int frame)
 {
 	if (dataptr) {
-		return(((KeyFrameHeaderType const *)dataptr)->height);
+		if (Get_Build_TS_Shape(dataptr)) {
+			return Get_Build_TS_FrameInfo(dataptr, frame)->FrameHeight;
+		}
+		return(((RedAlertShapeHeader const *)dataptr)->height);
 	}
 	return(0);
 }
@@ -555,11 +612,11 @@ unsigned short Get_Build_Frame_Height(void const *dataptr)
 
 bool Get_Build_Frame_Palette(void const * dataptr, void * palette)
 {
-	if (dataptr && (((KeyFrameHeaderType const *)dataptr)->flags & 1)) {
+	if (dataptr && (((RedAlertShapeHeader const *)dataptr)->flags & 1)) {
 		char const * ptr = (char const *)Add_Long_To_Pointer( dataptr,
 							( (( (long)sizeof(unsigned long) << 1) *
-								((KeyFrameHeaderType *) dataptr)->frames ) +
-							16 + sizeof(KeyFrameHeaderType) ) );
+								((RedAlertShapeHeader *) dataptr)->frames ) +
+							16 + sizeof(RedAlertShapeHeader) ) );
 
 		memcpy(palette, ptr, 768L);
 		return(true);

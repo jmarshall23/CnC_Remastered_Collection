@@ -1114,8 +1114,8 @@ void UnitTypeClass::One_Time(void)
 
 		((void const *&)uclass.ImageData) = ptr;
 		if (ptr != NULL) {
-			largest = max(largest, (int)Get_Build_Frame_Width(ptr));
-			largest = max(largest, (int)Get_Build_Frame_Height(ptr));
+			largest = max(largest, (int)Get_Build_Frame_Width(ptr, 0));
+			largest = max(largest, (int)Get_Build_Frame_Height(ptr, 0));
 		}
 		{
 			const char* imageFileName = Units_FindHDTexture(fullname, 0, 0);

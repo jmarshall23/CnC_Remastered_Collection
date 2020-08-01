@@ -2996,6 +2996,12 @@ static void Init_Bootstrap_Mixfiles(void)
 	int temp = RequiredCD;
 	RequiredCD = -2;
 
+	new MFCD("expand3.mix", &FastKey, MIX_FILE_TS);
+	{
+		bool ok = MFCD::Cache("expand3.mix");
+		assert(ok);
+	}
+
 // Isometric Files 
 	new MFCD("isosnow.mix", &FastKey, MIX_FILE_TS);
 	{
