@@ -1085,9 +1085,6 @@ void Device_Present(void);
 */
 void GlyphX_Debug_Print(const char *debug_text);
 
-void Disable_Uncompressed_Shapes (void);
-void Enable_Uncompressed_Shapes (void);
-
 int Cmd_Argc();
 char* Cmd_Argv(int index);
 

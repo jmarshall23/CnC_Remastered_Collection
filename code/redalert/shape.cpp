@@ -60,11 +60,6 @@ struct ShapeBufferHeader
 	BOOL m_IsTheaterShape;
 };
 
-extern "C" BOOL UseBigShapeBuffer;
-extern unsigned BigShapeBufferLength;
-extern unsigned TheaterShapeBufferLength;
-extern bool OriginalUseBigShapeBuffer;
-
 extern "C" extern char* BigShapeBufferStart;
 extern char* BigShapeBufferPtr;
 // int TotalBigShapes = 0;
@@ -100,17 +95,6 @@ void Buffer_Enable_HD_Texture(bool hdTextureEnabled) {
     renderHDTexture = hdTextureEnabled;
 }
 
-
-void Disable_Uncompressed_Shapes()
-{
-	UseBigShapeBuffer = false;
-}
-
-void Enable_Uncompressed_Shapes()
-{
-	UseBigShapeBuffer = OriginalUseBigShapeBuffer;
-}
-
 void* Build_Frame2(void* shape, uint16_t frame, void* buffer)
 {
 	uint8_t* shape_data = static_cast<uint8_t*>(shape);
@@ -128,49 +112,6 @@ void* Build_Frame2(void* shape, uint16_t frame, void* buffer)
 		//    le16toh(header->m_FrameCount));
 
 		return nullptr;
-	}
-
-	// If we are using a cache
-	if (UseBigShapeBuffer) {
-		if (!BigShapeBufferStart) {
-			// captainslog_debug("Allocating buffers for UseBigShapeBuffer.");
-			BigShapeBufferStart = static_cast<char*>(Alloc(BigShapeBufferLength, MEM_NORMAL));
-			BigShapeBufferPtr = BigShapeBufferStart;
-			TheaterShapeBufferStart = static_cast<char*>(Alloc(TheaterShapeBufferLength, MEM_NORMAL));
-			TheaterShapeBufferPtr = TheaterShapeBufferStart;
-		}
-
-		if (BigShapeBufferLength + (uintptr_t)BigShapeBufferStart - (uintptr_t)BigShapeBufferPtr
-			< BIGSHP_BUFFER_MIN_FREE) {
-			g_ReallocShapeBufferFlag = true;
-		}
-
-		// Do we have a keyframe slot allocated already?
-		if (header->m_XPos != 0xDDD5) {
-			header->m_XPos = 0xDDD5;
-			if (IsTheaterShape) {
-				header->m_YPos = g_TheaterSlotsUsed++;
-			}
-			else {
-				header->m_YPos = g_TotalSlotsUsed++;
-			}
-
-			g_KeyFrameSlots[header->m_YPos] = new uint32_t[header->m_FrameCount];
-			memset(g_KeyFrameSlots[header->m_YPos], 0, sizeof(uint32_t) * header->m_FrameCount);
-		}
-
-		// Do we have anything in our keyframe slot yet? If so, return it.
-		uint32_t shp_buff_offset = g_KeyFrameSlots[header->m_YPos][frame];
-		if (shp_buff_offset != 0) {
-			// captainslog_debug("Using Cached frame.");
-
-			if (IsTheaterShape) {
-				return shp_buff_offset + TheaterShapeBufferStart;
-			}
-			else {
-				return shp_buff_offset + BigShapeBufferStart;
-			}
-		}
 	}
 
 	// If we don't have a cache or failed to find a cached image for this frame, we need to decode the frame we want.
@@ -236,82 +177,10 @@ void* Build_Frame2(void* shape, uint16_t frame, void* buffer)
 	// This bit handles if we have a shape buffer to cache the decompressed frames
 	ShapeBufferHeader* buff_header = nullptr;
 
-	if (UseBigShapeBuffer) {
-		if (IsTheaterShape) {
-			char* saved_tsbp = TheaterShapeBufferPtr;
-			// Why height? I don't get it? Anyhow, this bit is aligning the memory
-			// Ahh, Buffer_Frame_To_Page writes flags into the extra area
-			// for how each line is to be processed.
-			char* aligned_tsbp = TheaterShapeBufferPtr + header->m_Height + sizeof(ShapeBufferHeader);
-
-			// Align memory pointer
-			uintptr_t align = (uintptr_t)aligned_tsbp;
-
-			if ((align % sizeof(void*)) != 0) {
-				align += sizeof(void*) - (align % sizeof(void*));
-			}
-
-			aligned_tsbp = (char*)align;
-
-			memcpy(aligned_tsbp, buffer, frame_size);
-			buff_header = reinterpret_cast<ShapeBufferHeader*>(TheaterShapeBufferPtr);
-			buff_header->m_DrawFlags = -1;
-			buff_header->m_IsTheaterShape = true;
-			buff_header->m_FrameOffset = aligned_tsbp - TheaterShapeBufferStart;
-			g_KeyFrameSlots[header->m_YPos][frame] = TheaterShapeBufferPtr - TheaterShapeBufferStart;
-			TheaterShapeBufferPtr = aligned_tsbp + frame_size;
-
-			// Align memory pointer
-			align = (uintptr_t)TheaterShapeBufferPtr;
-			if ((align % sizeof(void*)) != 0) {
-				align += sizeof(void*) - (align % sizeof(void*));
-			}
-			TheaterShapeBufferPtr = (char*)align;
-
-			g_ShapeLength = frame_size;
-
-			return saved_tsbp;
-		}
-		else {
-			char* saved_bsbp = BigShapeBufferPtr;
-			char* aligned_bsbp = BigShapeBufferPtr + header->m_Height + sizeof(ShapeBufferHeader);
-
-			// Align memory pointer
-			uintptr_t align = (uintptr_t)aligned_bsbp;
-
-			if ((align % sizeof(void*)) != 0) {
-				align += sizeof(void*) - (align % sizeof(void*));
-			}
-
-			aligned_bsbp = (char*)align;
-
-			memcpy(aligned_bsbp, buffer, frame_size);
-			buff_header = reinterpret_cast<ShapeBufferHeader*>(BigShapeBufferPtr);
-			buff_header->m_DrawFlags = -1;
-			buff_header->m_IsTheaterShape = false;
-			buff_header->m_FrameOffset = aligned_bsbp - BigShapeBufferStart;
-			g_KeyFrameSlots[header->m_YPos][frame] = BigShapeBufferPtr - BigShapeBufferStart;
-			BigShapeBufferPtr = aligned_bsbp + frame_size;
-
-			// Align memory pointer
-			align = (uintptr_t)BigShapeBufferPtr;
-
-			if ((align % sizeof(void*)) != 0) {
-				align += sizeof(void*) - (align % sizeof(void*));
-			}
-
-			BigShapeBufferPtr = (char*)align;
-
-			g_ShapeLength = frame_size;
-			return saved_bsbp;
-		}
-	}
-
 	return buffer;
 }
 
 INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffptr) {
-	UseBigShapeBuffer = false;
 	return (INT_PTR)Build_Frame2((void*)dataptr, framenumber, buffptr); // 32 bit to 64 bit issue
 }
 
@@ -319,15 +188,6 @@ INT_PTR Build_Frame(void const* dataptr, unsigned short framenumber, void* buffp
 void* Get_Shape_Header_Data(void* shape)
 {
 	ShapeBufferHeader* header = static_cast<ShapeBufferHeader*>(shape);
-	if (UseBigShapeBuffer) {
-		if (header->m_IsTheaterShape) {
-			return header->m_FrameOffset + TheaterShapeBufferStart;
-		}
-		else {
-			return header->m_FrameOffset + BigShapeBufferStart;
-		}
-	}
-
 	return shape;
 }
 
@@ -348,22 +208,7 @@ void Reset_Theater_Shapes()
 
 void Reallocate_Big_Shape_Buffer()
 {
-	{
-		// g_MemoryError = nullptr;
-		BigShapeBufferLength += BIGSHP_BUFFER_GROW;
-		BigShapeBufferPtr -= (intptr_t)BigShapeBufferStart;
-		BigShapeBufferStart = (char*)Resize_Alloc(BigShapeBufferStart, BigShapeBufferLength);
-		// captainslog_debug("Reallocating Big Shape Buffer, size is now %d.", BigShapeBufferLength);
-		// TODO
-		// g_MemoryError = Memory_Error_Handler;
-		if (BigShapeBufferStart) {
-			g_ReallocShapeBufferFlag = false;
-			BigShapeBufferPtr += (intptr_t)BigShapeBufferStart;
-		}
-		else {
-			UseBigShapeBuffer = false;
-		}
-	}
+	
 }
 
 extern "C" void Set_Shape_Buffer(const void* buffer, int size)
@@ -374,7 +219,6 @@ extern "C" void Set_Shape_Buffer(const void* buffer, int size)
 
 long Buffer_Frame_To_Page(int shapeNum, int x, int y, int width, int height, struct Image_t * shape_image, unsigned int Window, int flags, ...)
 {
-    BOOL use_old_drawer = false;
     int fade_count = 0;
     ShapeBufferHeader* draw_header = nullptr;
     uint8_t* fade_table = nullptr;
@@ -405,10 +249,6 @@ long Buffer_Frame_To_Page(int shapeNum, int x, int y, int width, int height, str
         blit_style |= 2;
         ghost_lookup = va_arg(ap, uint8_t*);
         ghost_table = ghost_lookup + 256;
-    }
-
-    if (!UseBigShapeBuffer || UseOldShapeDraw) {
-        use_old_drawer = true;
     }
 
     // Sets for BF_Fading functions

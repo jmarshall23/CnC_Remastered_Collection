@@ -4411,7 +4411,7 @@ void TechnoClass::Techno_Draw_Object(void const * shapefile, int shapenum, int x
 	assert(IsActive);
 
 	if (rotation != DIR_N || scale != 0x0100) {
-		Disable_Uncompressed_Shapes();
+		//Disable_Uncompressed_Shapes();
 	}
 
 	if (shapefile != NULL) {
@@ -4509,7 +4509,7 @@ void TechnoClass::Techno_Draw_Object(void const * shapefile, int shapenum, int x
 #endif
 	}
 
-	Enable_Uncompressed_Shapes();
+//	Enable_Uncompressed_Shapes();
 }
 
 

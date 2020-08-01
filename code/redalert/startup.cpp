@@ -96,13 +96,6 @@ const char* Game_Registry_Key();
 // Added. ST - 5/14/2019
 bool ProgEndCalled = false;
 
-extern "C"{
-	extern char		*BigShapeBufferStart;
-	extern char		*TheaterShapeBufferStart;
-	extern BOOL		UseBigShapeBuffer;
-	extern bool		IsTheaterShape;
-}
-
 extern void Free_Heaps(void);
 extern void DLL_Shutdown(void);
 
@@ -126,16 +119,6 @@ BOOL WINAPI DllMain(HINSTANCE instance, unsigned int fdwReason, void *lpvReserve
 		** Red Alert doesn't clean up memory. Do some of that here.
 		*/
 		MFCD::Free_All();
-
-		if (BigShapeBufferStart) {
-			Free(BigShapeBufferStart);
-			BigShapeBufferStart = NULL;
-		}
-
-		if (TheaterShapeBufferStart) {
-			Free(TheaterShapeBufferStart);
-			TheaterShapeBufferStart = NULL;
-		}
 
 		if (_ShapeBuffer) {
 			delete [] _ShapeBuffer;

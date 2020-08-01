@@ -195,27 +195,7 @@ static int Length;
 
 void Check_Use_Compressed_Shapes (void)
 {
-#if (1)	// Uncompressed shapes enabled for performance reasons. We don't need to worry about memory. 
-			// Uncompressed shapes don't seem to work in RA for rotated/scaled objects so wherever scale/rotate is used, 
-			// we will need to disable it (like in Techno_Draw_Object). ST - 11/6/2019 2:09PM
-	UseBigShapeBuffer = true;
-	OriginalUseBigShapeBuffer = true;
 
-#else
-	MEMORYSTATUS	mem_info;
-
-	mem_info.dwLength=sizeof(mem_info);
-	GlobalMemoryStatus(&mem_info);
-
-	UseBigShapeBuffer = (mem_info.dwTotalPhys > 16*1024*1024) ? TRUE : FALSE;
-#ifdef FIXIT_SCORE_CRASH
-	/*
-	** Keep track of our original decision about whether to use cached shapes.
-	** This is needed for the score screen crash fix.
-	*/
-	OriginalUseBigShapeBuffer = UseBigShapeBuffer;
-#endif	//FIXIT
-#endif
 }
 
 
