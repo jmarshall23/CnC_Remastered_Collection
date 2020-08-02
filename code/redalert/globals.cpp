@@ -559,17 +559,16 @@ PaletteClass WhitePalette(RGBClass(RGBClass::MAX_VALUE, RGBClass::MAX_VALUE, RGB
 PaletteClass OriginalPalette;
 PaletteClass ScorePalette;
 
-float HouseRGBColors[8][3] = {
-	{ 255.0f, 223.0f, 94.0f },
-	{160,164,200 }, // Allies Blue
-	{255.0f, 20.0f, 20.0f },	
-	{140, 244, 140 }, // Green
-	{255.0f, 155.0f, 0.0f},
-	{92, 192, 164},
-	{204, 184, 176},
-	{170, 93, 71}
+HSVClass HSVColors[8] = {
+	HSVClass(34, 128, 255), // Gold
+	HSVClass(164,140,255), // Light Blue
+	HSVClass(0,235,255), // Red
+	HSVClass(85,70,255), //  light Green
+	HSVClass(25,230,255), // orange
+	HSVClass(85,235,150), // dark green
+	HSVClass(0, 0, 131),
+	HSVClass(0,180,150)
 };
-
 
 /***************************************************************************
 **	These are the event queues. One is for holding events until they are ready to be

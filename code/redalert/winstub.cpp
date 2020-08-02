@@ -520,9 +520,11 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 			if (c >= 0x10 && c <= 0x1f) {
 				float greyscale = r / 255.0f;
 
-				r = HouseRGBColors[CCPaletteHouseColor][0] * greyscale;
-				g = HouseRGBColors[CCPaletteHouseColor][1] * greyscale;
-				b = HouseRGBColors[CCPaletteHouseColor][2] * greyscale;
+				RGBClass remap = GetHSVHouseColor(HSVColors[CCPaletteHouseColor], c - 0x10);
+
+				r = remap.GetRawRed() << 2;
+				g = remap.GetRawGreen() << 2;
+				b = remap.GetRawBlue() << 2;
 				a = 0;
 			}
 		}

@@ -39,6 +39,7 @@
 #include	"watcom.h"
 #include	"hsv.h"
 #include	"rgb.h"
+#include    <math.h>
 
 HSVClass const HSVClass::BlackColor(0, 0, 0);
 
@@ -205,4 +206,28 @@ void HSVClass::Set(int color) const
 {
 	RGBClass rgb = *this;
 	rgb.Set(color);
+}
+
+RGBClass GetHSVHouseColor(HSVClass& hsv, int index)
+{
+	int hue = hsv.Hue_Component();
+	int sat = hsv.Saturation_Component();
+	int val = hsv.Value_Component();
+
+	double satd = sat;
+	double vald = val;
+
+	double cosval = index * 0.08144869842640204 + 0.3490658503988659;// 4.666666666 + 20 as deg
+	double sinval = index * 0.04654211338651545 + 0.8726646259971648;// 2.666666666 + 49.99999999 as deg
+	if (index == 0) {
+		cosval = 0.1963495408493621;// (PI/ 16) 11.25 as deg, or DEG2RAD(180 / 16)
+	}
+
+	double satsin = sin(sinval);
+	double valcos = cos(cosval);
+
+	HSVClass temp(hue, satsin * satd, valcos * vald);
+	RGBClass color = temp;
+
+	return color;
 }
