@@ -3274,13 +3274,31 @@ void BuildingTypeClass::One_Time(void)
 		_makepath(fullname, NULL, NULL, buffer, ".SHP");
 		void const * dataptr;
 		dataptr = MFCD::Retrieve(fullname);
+		if(dataptr == NULL) {
+			sprintf(buffer, "%sMK", building.Graphic_Name());
+			_makepath(fullname, NULL, NULL, buffer, ".SHP");
+			dataptr = MFCD::Retrieve(fullname);
+		}
+
 		((void const *&)building.BuildupData) = dataptr;
 		if (dataptr != NULL) {
 			int timedelay = 1;
 			int count = Get_Build_Frame_Count(dataptr);
 			if (count > 0) {
 				timedelay = (Rule.BuildupTime * TICKS_PER_MINUTE) / count;
+// jmarshall - fix for too many build frames causeing the map animation not to play.
+				if(timedelay == 0) {
+					timedelay = 1;
+				}
+// jmarshall end
 			}
+
+// jmarshall - td build sequences, don't go through the shadow frames.
+			if(Get_Build_TS_Shape(dataptr)) {
+				count = count / 2;
+			}
+// jmarshall end
+
 			building.Init_Anim(BSTATE_CONSTRUCTION, 0, count, timedelay);
 		}
 

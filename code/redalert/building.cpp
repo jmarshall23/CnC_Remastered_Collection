@@ -3638,6 +3638,7 @@ int BuildingClass::Mission_Construction(void)
 				Sound_Effect(VOC_CONSTRUCTION, Coord);
 			}
 			Status = DURING;
+			IsReadyToCommence = false;
 			break;
 
 		case DURING:
