@@ -208,6 +208,13 @@ void HSVClass::Set(int color) const
 	rgb.Set(color);
 }
 
+/*
+==========================
+GetHSVHouseColor
+
+Author: tomsons26
+==========================
+*/
 RGBClass GetHSVHouseColor(HSVClass& hsv, int index)
 {
 	int hue = hsv.Hue_Component();
