@@ -427,6 +427,11 @@ long Buffer_Frame_To_Page(int shapeNum, int x, int y, int width, int height, str
     //
     //    return 0;
     //}
+
+    if(CCGlobalShadowRender) {
+        GL_EnableBlend(GL_BLEND_MULT);
+    }
+
     xstart = xstart + WindowList[Window][WINDOWX];// + LogicPage->Get_XPos();
 	ystart = ystart + WindowList[Window][WINDOWY];// + LogicPage->Get_YPos();
     //GL_SetClipRect(WindowList[Window][WINDOWX], WindowList[Window][WINDOWY], WindowList[Window][WINDOWWIDTH], WindowList[Window][WINDOWWIDTH]);    
@@ -434,6 +439,10 @@ long Buffer_Frame_To_Page(int shapeNum, int x, int y, int width, int height, str
         GL_RenderImage(shape_image, xstart, ystart, width, height, (int)fade_table, shapeNum);
     else
         GL_RenderImage(shape_image, xstart, ystart, width, height, 0);
+
+	if (CCGlobalShadowRender) {
+		GL_EnableBlend(GL_BLEND_NONE);
+	}
 
     // Here we just use the function that will blit the entire frame
     // using the appropriate effects.

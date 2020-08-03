@@ -4084,6 +4084,7 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 			ActiveAnimAnimShape = MFCD::Retrieve(ConstructAnimName);
 		}
 
+		IdleHasShadowFrames = ini.Get_Int(Name(), "IdleHasShadowFrames", 0);
 		IdleAnimNonDamagedStart = ini.Get_Int(Name(), "IdleAnimNonDamagedStart", -1);
 		IdleAnimNonDamagedFrames = ini.Get_Int(Name(), "IdleAnimNonDamagedFrames", -1);
 		IdleAnimDamagedStart = ini.Get_Int(Name(), "IdleAnimDamagedStart", -1);

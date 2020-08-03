@@ -322,6 +322,7 @@ extern int							ScenarioInit;
 extern HouseClass *				PlayerPtr;
 extern PaletteClass 				CCPalette;
 extern void*						CCGlobalOveridePalette;
+extern bool							CCGlobalShadowRender;
 extern int							CCPaletteHouseColor;
 extern HSVClass						HSVColors[8];
 extern PaletteClass 				BlackPalette;

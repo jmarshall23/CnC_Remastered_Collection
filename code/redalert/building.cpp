@@ -528,6 +528,30 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	CCGlobalOveridePalette = NULL;
 // jmarshall end
 
+
+// jmarshall - shadows are going to need to be done differently, but for now this will work.
+	if (Get_Build_TS_Shape(shapefile))
+	{
+		CCGlobalShadowRender = true;
+		{
+			int shadowFrameOffset = Get_Build_Frame_Count(shapefile) / 2;
+			Techno_Draw_Object(shapefile, shadowFrameOffset + Shape_Number(), x, y, window);
+		}
+		if (Class->IdleHasShadowFrames && Class->IdleAnimShape != NULL) {
+			int shapeNum = animFrameNum;
+			int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
+			if (Class->IdleAnimNonDamagedFrames != -1) {
+				maxframes = Class->IdleAnimNonDamagedFrames;
+			}
+
+			shapeNum = shapeNum % maxframes;
+			int shadowFrameOffset = Get_Build_Frame_Count(Class->IdleAnimShape) / 2;
+			Techno_Draw_Object(Class->IdleAnimShape, shadowFrameOffset + shapeNum, x, y, window);
+		}
+		CCGlobalShadowRender = false;
+	}
+// jmarshall end
+
 	IsTheaterShape = false;
 
 	/*

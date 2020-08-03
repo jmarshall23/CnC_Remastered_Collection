@@ -36,8 +36,8 @@ static void GL_EnableBlendCallback(const ImDrawList* parent_list, const ImDrawCm
 		glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
 	}
 	else {
-		glBlendEquation(GL_MULT);
-		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		//glBlendEquation(GL_MULT);
+		glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
 	}
 }
 

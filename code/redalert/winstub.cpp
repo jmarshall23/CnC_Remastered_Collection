@@ -510,7 +510,13 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 		unsigned char b = 0;
 		unsigned char a = 0;
 
-		if (CCGlobalOveridePalette && remap) {
+		if (CCGlobalShadowRender && c != 0) {
+			r = 120;
+			g = 120;
+			b = 120;
+			a = 120;
+		}
+		else if (CCGlobalOveridePalette && remap) {
 			r = ccpalete[(c * 3) + 0] << 2;
 			g = ccpalete[(c * 3) + 1] << 2;
 			b = ccpalete[(c * 3) + 2] << 2;
