@@ -821,6 +821,14 @@ class BuildingTypeClass : public TechnoTypeClass {
 		const void* CustomTheatrePalette[3];
 		const void* IdleAnimShape;
 		const void* ActiveAnimAnimShape;
+		int IdleAnimNonDamagedStart;
+		int IdleAnimNonDamagedFrames;
+		int IdleAnimDamagedStart;
+		int IdleAnimDamagedFrames;
+		int ActiveAnimNonDamagedStart;
+		int ActiveAnimNonDamagedFrames;
+		int ActiveAnimDamagedStart;
+		int ActiveAnimDamagedFrames;
 	private:
 
 		/*

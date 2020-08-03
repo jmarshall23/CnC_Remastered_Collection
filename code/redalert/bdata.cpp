@@ -568,6 +568,36 @@ static BuildingTypeClass const ClassTesla(
 	(short const *)OList12		// OVERLAPLIST:List of overlap cell offset.
 );
 
+static BuildingTypeClass const ClassPrisom(
+	STRUCT_PRISOM,
+	TXT_TESLA,						// NAME:			Short name of the structure.
+	"GGPRIS",							// NAME:			Short name of the structure.
+	FACING_S,						// Foundation direction from center of building.
+	XYP_COORD(0, 0),				// Exit point for produced units.
+	REMAP_ALTERNATE,				// Sidebar remap logic.
+	0x00C8,							//	Vertical offset.
+	0x0000,							// Primary weapon offset along turret centerline.
+	0x0000,							// Primary weapon lateral offset along turret centerline.
+	false,						// Is this building a fake (decoy?)
+	false,						// Animation rate is regulated for constant speed?
+	false,						// Always use the given name for the building?
+	false,						// Is this a wall type structure?
+	false,						// Simple (one frame) damage imagery?
+	false,						// Is it invisible to radar?
+	true,							// Can the player select this?
+	true,							// Is this a legal target for attack or move?
+	false,						// Is this an insignificant building?
+	false,						// Theater specific graphic image?
+	false,						// Does it have a rotating turret?
+	true,							// Can the building be color remapped to indicate owner?
+	RTTI_NONE,						// The object type produced at this factory.
+	DIR_N,							// Starting idle frame to match construction.
+	BSIZE_12, 						// SIZE:			Building size.
+	NULL,								// Preferred exit cell list.
+	(short const*)List12,		// OCCUPYLIST:	List of active foundation squares.
+	(short const*)OList12		// OVERLAPLIST:List of overlap cell offset.
+);
+
 static BuildingTypeClass const ClassTurret(
 	STRUCT_TURRET,
 	TXT_TURRET,						// NAME:			Short name of the structure.
@@ -3133,6 +3163,8 @@ void BuildingTypeClass::Init_Heap(void)
 #ifdef RA_AF
 	new BuildingTypeClass(ClassAFV01);			// STRUCT_AFV01
 #endif
+
+	new BuildingTypeClass(ClassPrisom);
 }
 
 Image_t* BuildingTypeClass::LoadHDImage(const char* fullname, int& numHDShapes, bool remapHouse) {
@@ -4051,6 +4083,15 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 		if (ini.Get_String(Name(), "ActiveAnim", "", &ConstructAnimName[0], sizeof(ConstructAnimName)) > 0) {
 			ActiveAnimAnimShape = MFCD::Retrieve(ConstructAnimName);
 		}
+
+		IdleAnimNonDamagedStart = ini.Get_Int(Name(), "IdleAnimNonDamagedStart", -1);
+		IdleAnimNonDamagedFrames = ini.Get_Int(Name(), "IdleAnimNonDamagedFrames", -1);
+		IdleAnimDamagedStart = ini.Get_Int(Name(), "IdleAnimDamagedStart", -1);
+		IdleAnimDamagedFrames = ini.Get_Int(Name(), "IdleAnimDamagedFrames", -1);
+		ActiveAnimNonDamagedStart = ini.Get_Int(Name(), "ActiveAnimNonDamagedStart", -1);
+		ActiveAnimNonDamagedFrames = ini.Get_Int(Name(), "ActiveAnimNonDamagedFrames", -1);
+		ActiveAnimDamagedStart = ini.Get_Int(Name(), "ActiveAnimDamagedStart", -1);
+		ActiveAnimDamagedFrames = ini.Get_Int(Name(), "ActiveAnimDamagedFrames", -1);
 
 		if (Power < 0) {
 			Drain = -Power;

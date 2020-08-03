@@ -505,13 +505,23 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 // jmarshall idle/construction animation
 	if (Class->IdleAnimShape != NULL) {
 		int shapeNum = animFrameNum;
-		shapeNum = shapeNum % Get_Build_Frame_Count(Class->IdleAnimShape);
+		int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
+		if (Class->IdleAnimNonDamagedFrames != -1) {
+			maxframes = Class->IdleAnimNonDamagedFrames;
+		}
+
+		shapeNum = shapeNum % maxframes;
 		Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
 	}
 
 	if (BState == BSTATE_ACTIVE && Class->ActiveAnimAnimShape != NULL) {
 		int shapeNum = Shape_Number();
-		shapeNum = shapeNum % Get_Build_Frame_Count(Class->ActiveAnimAnimShape);
+		int maxframes = Get_Build_Frame_Count(Class->ActiveAnimAnimShape);
+		if (Class->ActiveAnimNonDamagedFrames != -1) {
+			maxframes = Class->ActiveAnimNonDamagedFrames;
+		}
+
+		shapeNum = shapeNum % maxframes;
 		Techno_Draw_Object(Class->ActiveAnimAnimShape, shapeNum, x, y, window);
 	}
 

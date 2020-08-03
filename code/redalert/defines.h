@@ -1477,6 +1477,8 @@ typedef enum StructType : char {
 #ifdef RA_AF
 	STRUCT_AFV01,
 #endif
+	STRUCT_PRISOM,
+
 	STRUCT_COUNT,
 	STRUCT_FIRST=0
 } StructType;
