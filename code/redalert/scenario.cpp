@@ -402,7 +402,7 @@ bool Start_Scenario(char * name, bool briefing)
 	/*
 	** If there's no briefing movie, restate the mission at the beginning.
 	*/
-	if (!Debug_SkipBriefing)
+	if (!Debug_SkipBriefing && Session.Type != GAME_SKIRMISH)
 	{
 		RenderBriefing();
 	}	
