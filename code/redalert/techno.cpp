@@ -6541,7 +6541,7 @@ int TechnoTypeClass::Cost_Of(void) const
  * HISTORY:                                                                                    *
  *   07/29/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void const * TechnoTypeClass::Get_Cameo_Data(void) const
+struct Image_t*TechnoTypeClass::Get_Cameo_Data(void) const
 {
 	return(CameoData);
 }

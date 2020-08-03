@@ -426,12 +426,7 @@ BuildingClass * VesselTypeClass::Who_Can_Build_Me(bool intheory, bool legal, Hou
 void VesselTypeClass::Display(int x, int y, WindowNumberType window, HousesType ) const
 {
 	int shape = 0;
-	void const * ptr = Get_Cameo_Data();
-	if (ptr == NULL) {
-		ptr = Get_Image_Data();
-		shape = Rotation/6;
-	}
-	CC_Draw_Shape(ptr, shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
+	CC_DrawHD_Shape(Get_Cameo_Data(), shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
 }
 
 
@@ -569,8 +564,7 @@ void VesselTypeClass::One_Time(void)
 			**	Fetch the supporting data files for the unit.
 			*/
 			sprintf(buffer, "%sICON", uclass.Graphic_Name());
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
-			((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
+			((Image_t*&)uclass.CameoData) = LoadCameoImage(buffer);
 		}
 
 		/*

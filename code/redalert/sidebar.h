@@ -182,7 +182,7 @@ class SidebarClass: public PowerClass
 				void Deactivate(void);
 				void Flag_To_Redraw(void);
 				bool Factory_Link(int factory, RTTIType type, int id);
-				void const * Get_Special_Cameo(SpecialWeaponType type);
+				struct Image_t *Get_Special_Cameo(SpecialWeaponType type);
 
 				/*
 				**	File I/O.
@@ -324,8 +324,7 @@ class SidebarClass: public PowerClass
 				**	Pointer to the shape data for small versions of the logos. These are used as
 				**	placeholder pieces on the side bar.
 				*/
-				static void * LogoShapes;
-				static void * LogoShapesHD;
+				static struct Image_t* LogoShapes;
 
 				/*
 				**	This points to the animation sequence of frames used to mark the passage of time
@@ -337,7 +336,7 @@ class SidebarClass: public PowerClass
 				** This points to the animation sequence which deals with special
 				** shapes which handle non-production based icons.
 				*/
-				static void const * SpecialShapes[SPC_COUNT];
+				static struct Image_t * SpecialShapes[SPC_COUNT];
 
 				/*
 				**	This is the last theater that the special palette remap table was loaded

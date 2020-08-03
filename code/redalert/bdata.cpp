@@ -3288,15 +3288,13 @@ void BuildingTypeClass::One_Time(void)
 		**	Fetch the sidebar cameo image for this building.
 		*/
 		if (building.Level != -1) {
-//		if (building.IsBuildable) {
 			sprintf(buffer, "%sICON", building.Graphic_Name());
 
 			if (building.IsFake) {
 				buffer[3] = 'F';
 			}
 
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
-			((void const *&)building.CameoData) = MFCD::Retrieve(fullname);
+			((Image_t*&)building.CameoData) = LoadCameoImage(buffer);
 		}
 
 		/*
@@ -3448,12 +3446,7 @@ void BuildingTypeClass::Display(int x, int y, WindowNumberType window, HousesTyp
 		GL_RenderImage(hdimage, x, y, hdimage->renderwidth[0], hdimage->renderheight[0]);
 	}
 	else {
-		void const* ptr = Get_Cameo_Data();
-		if (ptr == NULL) {
-			IsTheaterShape = IsTheater;
-			ptr = Get_Image_Data();
-		}
-		CC_Draw_Shape(ptr, 0, x, y, window, SHAPE_CENTER | SHAPE_WIN_REL);
+		CC_DrawHD_Shape(Get_Cameo_Data(), 0, x, y, window, SHAPE_CENTER | SHAPE_WIN_REL);
 		IsTheaterShape = false;
 	}
 // jmarshall end
