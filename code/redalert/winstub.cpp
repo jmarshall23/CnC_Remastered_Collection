@@ -523,7 +523,7 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 			buffer[(i * 4) + 0] = 120;
 			buffer[(i * 4) + 1] = 120;
 			buffer[(i * 4) + 2] = 120;
-			buffer[(i * 4) + 3] = 120;
+			buffer[(i * 4) + 3] = 255;
 			
 			continue;
 		}
