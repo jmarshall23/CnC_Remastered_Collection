@@ -25,3 +25,4 @@ void GL_SetColor(float r, float g, float b);
 void GL_SetRenderTexture(RenderTexture* renderTexture);
 void GL_EnableBlend(GLBlendType blendType);
 void GL_DrawText(int color, float fontsize, float r, float g, float b, int x, int y, char* text);
+void GL_RenderLine(int x1, int y1, int x2, int y2, int r, int g, int b, float thickness);

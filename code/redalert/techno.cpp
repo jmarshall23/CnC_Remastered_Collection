@@ -3023,6 +3023,15 @@ bool TechnoClass::Electric_Zap(COORDINATE target_coord, int which, WindowNumberT
 		gonnadraw = true;
 	}
 
+	TechnoTypeClass const& tclass = *Techno_Type_Class();
+	WeaponTypeClass const* weapon = (which == 0) ? tclass.PrimaryWeapon : tclass.SecondaryWeapon;
+	if (weapon->Prism) {
+		CellClass::ConvertCoordsToIsometric(x, y);
+		CellClass::ConvertCoordsToIsometric(x1, y1);
+		GL_RenderLine(x, y, x1, y1, 163, 203, 205, 3.0f);
+		return true;
+	}
+
 	static int _shape[]={ 2, 3, 1, 0, 2, 3, 1, 0};
 	static int  _xadd[8][8]={
 		{ 0, 8, 8, 8, 0, 0, 0, 0},
@@ -3091,6 +3100,7 @@ bool TechnoClass::Electric_Zap(COORDINATE target_coord, int which, WindowNumberT
 				int xx = x;
 				int yy = y;
 				CellClass::ConvertCoordsToIsometric(xx, yy);
+
 				if (remap != NULL) {
 					CC_Draw_Shape(this, "LITNING", LightningShapes, _shape[facing]+(shots ? 4 : 0), xx, yy, (window != WINDOW_PARTIAL) ? window : WINDOW_TACTICAL, SHAPE_FADING|SHAPE_CENTER|SHAPE_WIN_REL, remap);
 				} else {

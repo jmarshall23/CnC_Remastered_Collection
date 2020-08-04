@@ -67,6 +67,17 @@ void GL_ResetClipRect(void) {
 	ImGui::GetBackgroundDrawList()->PopClipRect();
 }
 
+void GL_RenderLine(int x1, int y1, int x2, int y2, int r, int g, int b, float thickness) {
+	ImVec2 p1(x1, y1);
+	ImVec2 p2(x2, y2);
+
+	float _r = r / 255.0f;
+	float _g = g / 255.0f;
+	float _b = b / 255.0f;
+
+	ImGui::GetBackgroundDrawList()->AddLine(p1, p2, ImGui::ColorConvertFloat4ToU32(ImVec4(_r, _g, _b, 1)), thickness);
+}
+
 void GL_RenderImage(Image_t* image, int x, int y, int width, int height, int colorRemap, int shapeId, bool ignoreOutOfScreenPixels, bool flipUV) {
 	if (!ignoreOutOfScreenPixels)
 	{
