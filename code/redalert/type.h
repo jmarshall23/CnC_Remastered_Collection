@@ -823,6 +823,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 		const void* CustomTheatrePalette[3];
 		const void* IdleAnimShape;
 		const void* ActiveAnimAnimShape;
+		int IdleAnimIgnorePowerState;
 		int IdleHasShadowFrames;
 		int IdleAnimNonDamagedStart;
 		int IdleAnimNonDamagedFrames;
@@ -831,8 +832,10 @@ class BuildingTypeClass : public TechnoTypeClass {
 		int ActiveAnimNonDamagedStart;
 		int ActiveAnimNonDamagedFrames;
 		int ActiveAnimDamagedStart;
-		int ActiveAnimDamagedFrames;
+		int ActiveAnimDamagedFrames;		
 	private:
+		int tileW;
+		int tileH;
 
 		/*
 		**	This is a pointer to a list of offsets (from the upper left corner) that

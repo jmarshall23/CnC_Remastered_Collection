@@ -504,7 +504,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	
 // jmarshall idle/construction animation
 	// Only play the idle animation if we have power!
-	if (!Class->IsPowered || (Class->IsPowered && House->Power_Fraction() >= 1)) {
+	if (Class->IdleAnimIgnorePowerState || !Class->IsPowered || (Class->IsPowered && House->Power_Fraction() >= 1)) {
 		if (Class->IdleAnimShape != NULL) {
 			int shapeNum = animFrameNum;
 			int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
