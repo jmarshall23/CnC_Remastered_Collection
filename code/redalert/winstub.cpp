@@ -508,19 +508,29 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 		unsigned char r = 0;
 		unsigned char g = 0;
 		unsigned char b = 0;
-		unsigned char a = 0;
+		unsigned char a = 255;
 
-		if (CCGlobalShadowRender && c != 0) {
-			r = 120;
-			g = 120;
-			b = 120;
-			a = 120;
+		// If C is zero then its 0% alpha. 
+		if (c == 0) {
+			buffer[(i * 4) + 0] = 0;
+			buffer[(i * 4) + 1] = 0;
+			buffer[(i * 4) + 2] = 0;
+			buffer[(i * 4) + 3] = 0;
+			continue;
+		}
+
+		if (CCGlobalShadowRender) {
+			buffer[(i * 4) + 0] = 120;
+			buffer[(i * 4) + 1] = 120;
+			buffer[(i * 4) + 2] = 120;
+			buffer[(i * 4) + 3] = 120;
+			
+			continue;
 		}
 		else if (CCGlobalOveridePalette && remap) {
 			r = ccpalete[(c * 3) + 0] << 2;
 			g = ccpalete[(c * 3) + 1] << 2;
 			b = ccpalete[(c * 3) + 2] << 2;
-			a = 0;
 
 			// Assume we are loading TS palettes.
 			if (c >= 0x10 && c <= 0x1f) {
@@ -531,7 +541,6 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 				r = remap.GetRawRed() << 2;
 				g = remap.GetRawGreen() << 2;
 				b = remap.GetRawBlue() << 2;
-				a = 0;
 			}
 		}
 		else if (remap) {
@@ -539,28 +548,29 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 			r = ccpalete[(c * 3) + 0] << 2;
 			g = ccpalete[(c * 3) + 1] << 2;
 			b = ccpalete[(c * 3) + 2] << 2;
-			a = 0;
+
+			// Red Alert 1 shadow support.
+			if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 128;
+			}
 		}
 		else
 		{
 			r = ccpalete[(c * 3) + 0] << 2;
 			g = ccpalete[(c * 3) + 1] << 2;
 			b = ccpalete[(c * 3) + 2] << 2;
-			a = 0;
-		}
 
-		
-
-		if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
-			r = 0;
-			g = 0;
-			b = 0;			
-			a = 128;
+			// Red Alert 1 shadow support.
+			if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 128;
+			}
 		}
-		else if (c != 0) {
-			a = 255;
-		}
-
 
 		buffer[(i * 4) + 0] = r;
 		buffer[(i * 4) + 1] = g;

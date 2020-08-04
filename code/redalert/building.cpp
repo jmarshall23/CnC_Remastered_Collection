@@ -489,7 +489,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 		int animShapeNum = Shape_Number();
 
 		// If we have a seperate activation animation, play that instead of cycling through the frames here.
-		if (BState == BSTATE_ACTIVE && Class->ActiveAnimAnimShape != NULL) {
+		if ((BState == BSTATE_ACTIVE || IsCharging) && Class->ActiveAnimAnimShape != NULL){
 			animShapeNum = 0;
 		}
 
@@ -503,15 +503,18 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 // jmarshall end
 	
 // jmarshall idle/construction animation
-	if (Class->IdleAnimShape != NULL) {
-		int shapeNum = animFrameNum;
-		int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
-		if (Class->IdleAnimNonDamagedFrames != -1) {
-			maxframes = Class->IdleAnimNonDamagedFrames;
-		}
+	// Only play the idle animation if we have power!
+	if (!Class->IsPowered || (Class->IsPowered && House->Power_Fraction() >= 1)) {
+		if (Class->IdleAnimShape != NULL) {
+			int shapeNum = animFrameNum;
+			int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
+			if (Class->IdleAnimNonDamagedFrames != -1) {
+				maxframes = Class->IdleAnimNonDamagedFrames;
+			}
 
-		shapeNum = shapeNum % maxframes;
-		Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
+			shapeNum = shapeNum % maxframes;
+			Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
+		}
 	}
 
 	if ((BState == BSTATE_ACTIVE || IsCharging) && Class->ActiveAnimAnimShape != NULL) {
