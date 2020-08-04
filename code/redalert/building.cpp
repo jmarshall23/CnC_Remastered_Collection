@@ -463,7 +463,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	*/
 	void const * shapefile = Get_Image_Data();
 	if (shapefile == NULL) return;
-
+		
 	/*
 	**	Actually draw the building shape.
 	*/
@@ -514,8 +514,14 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 		Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
 	}
 
-	if (BState == BSTATE_ACTIVE && Class->ActiveAnimAnimShape != NULL) {
+	if ((BState == BSTATE_ACTIVE || IsCharging) && Class->ActiveAnimAnimShape != NULL) {
 		int shapeNum = Shape_Number();
+		// If we are charging play the charging anims.
+		if (IsCharging) {
+			shapeNum = customAnimFrames;
+			((BuildingClass * )this)->customAnimFrames += 0.5;
+		}
+
 		int maxframes = Get_Build_Frame_Count(Class->ActiveAnimAnimShape);
 		if (Class->ActiveAnimNonDamagedFrames != -1) {
 			maxframes = Class->ActiveAnimNonDamagedFrames;
@@ -5775,7 +5781,16 @@ void BuildingClass::Charging_AI(void)
 	if (Class->PrimaryWeapon != NULL && Class->PrimaryWeapon->IsElectric && BState != BSTATE_CONSTRUCTION) {
 		if (Target_Legal(TarCom) && House->Power_Fraction() >= 1) {
 			if (!IsCharged) {
-				if (IsCharging) {
+				if (Class->ActiveAnimAnimShape && IsCharging) {
+					Mark(MARK_CHANGE);
+					if (customAnimFrames >= Class->ActiveAnimNonDamagedFrames) {
+						IsCharged = true;
+						IsCharging = false;
+						customAnimFrames = 0;
+						Set_Rate(0);
+					}
+				}
+				else if (IsCharging) {
 //					if (stagechange) {
 						Mark(MARK_CHANGE);
 						if (Fetch_Stage() >= 9) {
@@ -5787,6 +5802,7 @@ void BuildingClass::Charging_AI(void)
 				} else if (!Arm) {
 					IsCharged = false;
 					IsCharging = true;
+					customAnimFrames = 0;
 					Set_Stage(0);
 					Set_Rate(3);
 					Sound_Effect(VOC_TESLA_POWER_UP, Coord);
