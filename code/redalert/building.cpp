@@ -539,7 +539,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 
 
 // jmarshall - shadows are going to need to be done differently, but for now this will work.
-	if (Get_Build_TS_Shape(shapefile))
+	if (Get_Build_TS_Shape(shapefile) && hdimage == NULL)
 	{
 		CCGlobalShadowRender = true;
 		{
