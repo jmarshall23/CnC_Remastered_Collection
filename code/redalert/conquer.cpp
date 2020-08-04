@@ -3726,7 +3726,12 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 
 		Image_t* shape_image = NULL;
 		char tmp[512];
-		sprintf(tmp, "s_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
+		if (CCGlobalShadowRender) {
+			sprintf(tmp, "h_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
+		}
+		else {
+			sprintf(tmp, "s_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
+		}
 		shape_image = Find_Image(tmp);
 
 		if (!shape_image)
