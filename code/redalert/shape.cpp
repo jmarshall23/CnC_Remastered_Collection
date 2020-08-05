@@ -434,6 +434,27 @@ long Buffer_Frame_To_Page(int shapeNum, int x, int y, int width, int height, str
 
     xstart = xstart + WindowList[Window][WINDOWX];// + LogicPage->Get_XPos();
 	ystart = ystart + WindowList[Window][WINDOWY];// + LogicPage->Get_YPos();
+    if (CCGlobalShroudRender) {
+        //if ((shapeNum % 3) == 0) {
+		//	xstart = xstart - 2;
+		//	ystart = ystart - 2;
+		//	width = width + 2;
+		//	height = height + 2;
+        //}
+        //else {
+            xstart = xstart - 2;
+            ystart = ystart - 2;
+			width = width + 2;
+			height = height + 2;
+        //}
+        //char tmp[128];
+        //sprintf(tmp, "%d", shapeNum);
+        //GL_DrawForegroundText(6, xstart, ystart, tmp);
+        
+        //width = width + 2;
+        //height = height + 2;
+    }
+
     //GL_SetClipRect(WindowList[Window][WINDOWX], WindowList[Window][WINDOWY], WindowList[Window][WINDOWWIDTH], WindowList[Window][WINDOWWIDTH]);    
     if(renderHDTexture)
         GL_RenderImage(shape_image, xstart, ystart, width, height, (int)fade_table, shapeNum);

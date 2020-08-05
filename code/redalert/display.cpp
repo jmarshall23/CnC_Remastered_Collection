@@ -1935,12 +1935,14 @@ void DisplayClass::CacheVisibleCells(void) {
 					cellptr->visibleFrame = g_startFrameTime;
 					cellptr->x_world_pos = xpixel;
 					cellptr->y_world_pos = ypixel;
+					cellptr->inShadow = false;
 					cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
 				}
 				else {
 					if (Cell_Shadow(cell, PlayerPtr) >= 0) {
 						cellptr->visibleFrame = g_startFrameTime;
 						cellptr->x_world_pos = xpixel;
+						cellptr->inShadow = true;
 						cellptr->y_world_pos = ypixel;
 						cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
 					}
@@ -2274,6 +2276,9 @@ void DisplayClass::Redraw_OIcons(void)
 {
 	for (int i = 0; i < numCachedDisplayCells; i++) {
 		CellClass* cellptr = cellDisplayCache[i].ptr;
+		if (cellptr->inShadow) {
+			continue;
+		}
 		cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos, true);
 	}
 }
@@ -2333,7 +2338,9 @@ void DisplayClass::Redraw_Shadow(void)
 						//}
 
 						if (shadow >= 0) {
+							CCGlobalShroudRender = true;
 							CC_DrawHD_Shape(ShadowShapes, shadow, xpixel, ypixel, WINDOW_TACTICAL, SHAPE_GHOST, NULL, ShadowTrans);
+							CCGlobalShroudRender = false;
 						}
 					}
 				}

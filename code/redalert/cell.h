@@ -187,6 +187,7 @@ class CellClass
 		int x_screen_pos;
 		int y_screen_pos;
 		int debug_select;
+		bool inShadow;
 
 		/*
 		**	Per-player view of whether a cell is mapped. One bit for each house type. ST - 8/2/2019 3:00PM
