@@ -832,11 +832,9 @@ class BuildingTypeClass : public TechnoTypeClass {
 		int ActiveAnimNonDamagedStart;
 		int ActiveAnimNonDamagedFrames;
 		int ActiveAnimDamagedStart;
-		int ActiveAnimDamagedFrames;		
+		int ActiveAnimDamagedFrames;	
+		int RenderOffsetY;
 	private:
-		int tileW;
-		int tileH;
-
 		/*
 		**	This is a pointer to a list of offsets (from the upper left corner) that
 		**	are used to indicate the building's "footprint". This footprint is used

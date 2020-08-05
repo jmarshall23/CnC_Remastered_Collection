@@ -463,6 +463,8 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	*/
 	void const * shapefile = Get_Image_Data();
 	if (shapefile == NULL) return;
+
+	y = y + Class->RenderOffsetY;
 		
 	/*
 	**	Actually draw the building shape.
@@ -609,7 +611,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 		}
 	}
 
-	TechnoClass::Draw_It(x, y, window);
+	TechnoClass::Draw_It(x, y - Class->RenderOffsetY, window);
 
 	/*
 	** If this is a factory that we're spying on, show what it's producing

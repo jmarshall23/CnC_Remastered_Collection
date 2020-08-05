@@ -3810,18 +3810,7 @@ short const * BuildingTypeClass::Overlap_List(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Width(void) const
 {
-	static int width[BSIZE_COUNT] = {
-		1,
-		2,
-		1,
-		2,
-		2,
-		3,
-		3,
-		4,
-		5
-	};
-	return(width[Size]);
+	return (Get_Build_Frame_Width(Get_Image_Data(), 0) / ICON_PIXEL_W) + 1;
 }
 
 
@@ -3841,18 +3830,7 @@ int BuildingTypeClass::Width(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Height(bool bib) const
 {
-	static int height[BSIZE_COUNT] = {
-		1,
-		1,
-		2,
-		2,
-		3,
-		2,
-		3,
-		2,
-		5
-	};
-	return(height[Size] + ((bib && IsBibbed) ? 1 : 0));
+	return (Get_Build_Frame_Height(Get_Image_Data(), 0) / ICON_PIXEL_H) + 1;
 }
 
 
@@ -4077,6 +4055,7 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 			ActiveAnimAnimShape = MFCD::Retrieve(ConstructAnimName);
 		}
 
+		RenderOffsetY = ini.Get_Int(Name(), "RenderOffsetY", 0);
 		IdleAnimIgnorePowerState = ini.Get_Int(Name(), "IdleAnimIgnorePowerState", 0);
 		IdleHasShadowFrames = ini.Get_Int(Name(), "IdleHasShadowFrames", 0);
 		IdleAnimNonDamagedStart = ini.Get_Int(Name(), "IdleAnimNonDamagedStart", -1);
