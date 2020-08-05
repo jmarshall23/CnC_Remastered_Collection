@@ -4683,7 +4683,7 @@ void const * TechnoClass::Remap_Table(void) const
 	if (Techno_Type_Class()->IsRemappable) {
 		return(House->Remap_Table(IsBlushing, Techno_Type_Class()->Remap));
 	}
-	return(ColorRemaps[PCOLOR_GOLD].RemapTable);
+	return NULL;
 }
 
 

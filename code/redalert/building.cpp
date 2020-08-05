@@ -4842,6 +4842,11 @@ void const * BuildingClass::Remap_Table(void)
 {
 	assert(Buildings.ID(this) == ID);
 	assert(IsActive);
+// jmarshall
+	if(!Class->IsRemappable) {
+		return NULL;
+	}
+// jmarshall end
 
 	return(House->Remap_Table(IsBlushing, Class->Remap));
 }

@@ -3684,9 +3684,9 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 	if ((flags & SHAPE_GHOST) && (!ghostdata)) {
 		ghostdata = DisplayClass::SpecialGhost;
 	}
-	if ((flags & SHAPE_FADING) && (!fadingdata)) {
-		fadingdata = DisplayClass::FadingShade;
-	}
+	//if ((flags & SHAPE_FADING) && (!fadingdata)) {
+	//	fadingdata = DisplayClass::FadingShade;
+	//}
 
 	static unsigned char * _xbuffer = 0;
 
