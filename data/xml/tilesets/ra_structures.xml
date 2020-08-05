@@ -3,42 +3,7 @@
 	<TilesetTypeClass name="RA_Structures">
 		<RootTexturePath>Red_Alert\Structures</RootTexturePath>
 		<Tiles>
-			<Tile>
-				<Key>
-					<Name>ABAN01</Name>
-					<Shape>0</Shape>
-				</Key>
-				<Value>
-					<Frames>
-						<Frame>ABAN04/aban04_0000.png</Frame>
-						<Frame>ABAN04/aban04_0001.png</Frame>
-					</Frames>
-				</Value>
-			</Tile>			
-			<Tile>
-				<Key>
-					<Name>ABAN02</Name>
-					<Shape>0</Shape>
-				</Key>
-				<Value>
-					<Frames>
-						<Frame>ABAN05/aban12_0000.png</Frame>
-						<Frame>ABAN05/aban12_0001.png</Frame>
-					</Frames>
-				</Value>
-			</Tile>	
-			<Tile>
-				<Key>
-					<Name>ABAN03</Name>
-					<Shape>0</Shape>
-				</Key>
-				<Value>
-					<Frames>
-						<Frame>ABAN06/aban06_0000.png</Frame>
-						<Frame>ABAN06/aban06_0001.png</Frame>
-					</Frames>
-				</Value>
-			</Tile>		
+			
 		</Tiles>		
 	</TilesetTypeClass>
 </Tilesets>
