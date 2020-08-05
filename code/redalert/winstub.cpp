@@ -572,6 +572,22 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 			}
 		}
 
+		if (CCGlobalShroudRender) {
+			if (c != 254)
+			{
+				r = min(c * 2, 255);
+				g = min(c * 2, 255);
+				b = min(c * 2, 255);
+				a = 255;
+			}
+			else {
+				r = g = b = 0;
+				a = 0;
+			}
+
+
+		}
+
 		buffer[(i * 4) + 0] = r;
 		buffer[(i * 4) + 1] = g;
 		buffer[(i * 4) + 2] = b;
@@ -631,6 +647,19 @@ void Image_Add8BitImage(Image_t *image, int HouseId, int ShapeID, int Width, int
 			a = 255;
 		}
 
+		if(CCGlobalShroudRender) {
+			if (c != 254)
+			{
+				r = min(c * 2, 255);
+				g = min(c * 2, 255);
+				b = min(c * 2, 255);
+				a = 255;
+			}
+			else {
+				r = g = b = 0;
+				a = 0;
+			}
+		}
 
 		buffer[(i * 4) + 0] = r;
 		buffer[(i * 4) + 1] = g;

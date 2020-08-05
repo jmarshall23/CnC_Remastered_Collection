@@ -552,6 +552,7 @@ HouseClass * PlayerPtr;
 PaletteClass CCPalette;
 void* CCGlobalOveridePalette = NULL;
 bool CCGlobalShadowRender = false;
+bool CCGlobalShroudRender = false;
 int	CCPaletteHouseColor = 0;
 PaletteClass GamePalette;
 //PaletteClass InGamePalette;

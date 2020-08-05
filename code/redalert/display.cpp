@@ -256,7 +256,22 @@ void DisplayClass::One_Time(void)
 	TransIconsetHD[1] = Image_LoadImage("ui/trans/trans1.png");
 	TransIconsetHD[2] = Image_LoadImage("ui/trans/trans2.png");
 
-	ShadowShapes = Image_LoadImage("ui/shroud.png");
+	//ShadowShapes = Image_LoadImage("ui/shroud.png");
+	const void* ShadowShapeBuffers = MFCD::Retrieve("shroud.shp");
+	int ShadowShapeWidth = Get_Build_Frame_Width(ShadowShapeBuffers, -1);
+	int ShadowShapeHeight = Get_Build_Frame_Height(ShadowShapeBuffers, -1);
+	
+	CCGlobalShroudRender = true;
+	INT_PTR shapeptr = Build_Frame(ShadowShapeBuffers, 0, _ShapeBuffer);
+	ShadowShapes = Image_CreateImageFrom8Bit("ShadowShapes", ShadowShapeWidth, ShadowShapeHeight, (unsigned char *)shapeptr);
+	
+	int numFrames = Get_Build_Frame_Count(ShadowShapeBuffers);
+	for (int i = 1; i < numFrames; i++) {
+		shapeptr = Build_Frame(ShadowShapeBuffers, i, _ShapeBuffer);
+		Image_Add8BitImage(ShadowShapes, 0, i, ShadowShapeWidth, ShadowShapeHeight, (unsigned char*)shapeptr, NULL, NULL);
+	}
+	CCGlobalShroudRender = false;
+
 
 	Image_t* sceneAlbedoTexture = Image_CreateBlankImage("sceneAlbedoTexture", ScreenWidth, ScreenHeight, true);
 	Image_t* sceneDepthTexture = Image_CreateDepthImage("sceneDepthTexture", ScreenWidth, ScreenHeight);
@@ -1917,17 +1932,18 @@ void DisplayClass::CacheVisibleCells(void) {
 			if (Coord_To_Pixel(coord, xpixel, ypixel)) {
 				CellClass* cellptr = &(*this)[coord];
 				if ((cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)) || Debug_Unshroud) {
-					if (!(Cell_Shadow(cell, PlayerPtr) >= 0 && !Debug_Unshroud)) {
+					cellptr->visibleFrame = g_startFrameTime;
+					cellptr->x_world_pos = xpixel;
+					cellptr->y_world_pos = ypixel;
+					cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
+				}
+				else {
+					if (Cell_Shadow(cell, PlayerPtr) >= 0) {
 						cellptr->visibleFrame = g_startFrameTime;
 						cellptr->x_world_pos = xpixel;
 						cellptr->y_world_pos = ypixel;
 						cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
 					}
-					else {
-						IsShadowPresent = true;
-					}
-				}
-				else {
 					IsShadowPresent = true;
 				}	
 
@@ -2282,6 +2298,7 @@ void DisplayClass::Redraw_OIcons(void)
  *=============================================================================================*/
 void DisplayClass::Redraw_Shadow(void)
 {
+	GL_EnableBlend(GL_BLEND_MULT);
 	if (IsShadowPresent) {
 		for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
 			for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
@@ -2316,13 +2333,15 @@ void DisplayClass::Redraw_Shadow(void)
 						//}
 
 						if (shadow >= 0) {
-							CC_DrawHD_Shape(ShadowShapes, 0, xpixel, ypixel, WINDOW_TACTICAL, SHAPE_GHOST, NULL, ShadowTrans);
+							CC_DrawHD_Shape(ShadowShapes, shadow, xpixel, ypixel, WINDOW_TACTICAL, SHAPE_GHOST, NULL, ShadowTrans);
 						}
 					}
 				}
 			}
 		}
 	}
+
+	GL_EnableBlend(GL_BLEND_NONE);
 }
 
 
