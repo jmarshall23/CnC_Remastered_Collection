@@ -3283,7 +3283,7 @@ void BuildingTypeClass::One_Time(void)
 	for (int sindex = STRUCT_FIRST; sindex < STRUCT_COUNT; sindex++) {
 		char	fullname[_MAX_FNAME+_MAX_EXT];
 		char	buffer[_MAX_FNAME];
-		BuildingTypeClass const & building = As_Reference((StructType)sindex);
+		BuildingTypeClass & building = As_Reference((StructType)sindex);
 		/*
 		**	Fetch the sidebar cameo image for this building.
 		*/
@@ -3351,6 +3351,32 @@ void BuildingTypeClass::One_Time(void)
 		//		building.HDImageData->renderheight[d] = height;
 		//	}
 		//}
+
+		{
+			short* ptr = &building._occupy[0];
+			int height = building.Height();
+			int width = building.Width();
+
+			//for (int y = 0; y < height; y++) {
+			//	for (int x = 0; x < width; x++) {
+			//		*ptr++ = y + (x * (MAP_CELL_W - 1));
+			//	}
+			//}
+			*ptr++ = MAP_CELL_W;
+			for (int y = 0; y < width; y++) {
+				*ptr++ = (MAP_CELL_W) + (y + 1) * (MAP_CELL_W + 1);
+			}
+
+			for (int x = 0; x < height / 2; x++) {
+				*ptr++ = (MAP_CELL_W)+ (x + 1) * (MAP_CELL_W);
+			}
+
+			for (int x = 0; x < height / 2; x++) {
+				*ptr++ = (MAP_CELL_W)+ (x + 1);
+			}
+
+			*ptr = REFRESH_EOL;
+		}
 	}
 
 	int specialNumHDImages = 0;
@@ -3728,41 +3754,7 @@ BuildingTypeClass & BuildingTypeClass::As_Reference(StructType type)
  *=============================================================================================*/
 short const * BuildingTypeClass::Occupy_List(bool placement) const
 {
-	SmudgeType bib = SMUDGE_NONE;
-	CELL cell=0;
-
-	if (placement && Bib_And_Offset(bib, cell)) {
-
-		SmudgeTypeClass const & smudge = SmudgeTypeClass::As_Reference(bib);
-		static short _list[25];
-		short * dest = &_list[0];
-
-		/*
-		**	Copy the bib overlap list into the working buffer.
-		*/
-		short const * src = smudge.Occupy_List();
-		while (*src != REFRESH_EOL) {
-			*dest++ = (*src++) + cell;
-		}
-
-		/*
-		**	Append the building occupy list to this working buffer.
-		*/
-		src = OccupyList;
-		while (src && *src != REFRESH_EOL) {
-			*dest++ = *src++;
-		}
-		*dest = REFRESH_EOL;
-
-		return(&_list[0]);
-	}
-
-	if (OccupyList != NULL) {
-		return(OccupyList);
-	}
-
-	static short const _templap[] = {REFRESH_EOL};
-	return(&_templap[0]);
+	return &_occupy[0];
 }
 
 
@@ -3810,7 +3802,7 @@ short const * BuildingTypeClass::Overlap_List(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Width(void) const
 {
-	return (Get_Build_Frame_Width(Get_Image_Data(), 0) / ICON_PIXEL_W) + 1;
+	return (ceil((float)Get_Build_Frame_Width(Get_Image_Data(), 0) / (float)ICON_PIXEL_W));
 }
 
 
@@ -3830,7 +3822,7 @@ int BuildingTypeClass::Width(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Height(bool bib) const
 {
-	return (Get_Build_Frame_Height(Get_Image_Data(), 0) / ICON_PIXEL_H) + 1;
+	return (ceil((float)Get_Build_Frame_Height(Get_Image_Data(), 0) / (float)ICON_PIXEL_H));
 }
 
 

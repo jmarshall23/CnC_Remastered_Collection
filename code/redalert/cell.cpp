@@ -1358,7 +1358,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 		//		ConvertCoordsToIsometric(isox, isoy);
 		//		char tmp[12];
 		//		sprintf(tmp, "%d", cell);
-		//		GL_DrawText(6, isox, isoy, tmp);
+		//		GL_DrawForegroundText(6, isox, isoy, tmp);
 		//}
 
 		BEnd(BENCH_CELL);

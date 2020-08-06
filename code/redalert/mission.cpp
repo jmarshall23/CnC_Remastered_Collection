@@ -222,6 +222,8 @@ void MissionClass::AI(void)
 		return;
 	}
 
+
+
 	/*
 	**	This is the script AI equivalent processing.
 	*/

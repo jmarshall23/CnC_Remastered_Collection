@@ -855,6 +855,9 @@ class BuildingTypeClass : public TechnoTypeClass {
 		*/
 		void const * BuildupData;
 
+		// Occupy list.
+		short _occupy[25 * 25];
+
 		void Init_Anim(BStateType state, int start, int count, int rate) const;
 		static Image_t* LoadHDImage(const char* fullname, int &numHDShapes, bool remapHouse);
 };

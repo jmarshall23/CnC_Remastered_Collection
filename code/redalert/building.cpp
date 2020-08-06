@@ -296,7 +296,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 						break;
 
 					case STRUCT_REFINERY:
-						param = ::As_Target(Coord_Cell(Adjacent_Cell(Center_Coord(), DIR_S)));
+						param = ::As_Target(Coord_Cell(Center_Coord() + (MAP_CELL_W /*+ 1)*/))); // jmarshall: changed from Adjacent_Cell(Center_Coord(), DIR_S))
 						break;
 				}
 
