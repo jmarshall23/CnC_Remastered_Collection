@@ -384,6 +384,8 @@ bool MPSuperWeaponDisable = false;
 bool ShareAllyVisibility = true;
 bool UseGlyphXStartLocations = true;
 
+SpecialClass* SpecialBackup = NULL;
+
 
 int GetRandSeed()
 {
@@ -670,6 +672,8 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Set_Multiplayer_Data(int scena
 
 	Special.IsEarlyWin = game_options.DestroyStructures;
 
+	Special.ModernBalance = game_options.ModernBalance;
+
 	/*
 	** Enable Counterstrike/Aftermath units
 	*/
@@ -713,6 +717,13 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Set_Multiplayer_Data(int scena
 	** Force smart defense always on for multiplayer/skirmish
 	*/
 	Rule.IsSmartDefense = true;
+
+	/*
+	** Backup special
+	*/
+	if (SpecialBackup != NULL) {
+		memcpy(SpecialBackup, &Special, sizeof(SpecialClass));
+	}
 
 	return true;
 }
@@ -1527,7 +1538,7 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Advance_Instance(uint64 player
 	if (Frame <= 10) {		// Don't spam forever, but useful to know that we actually started advancing
 		GlyphX_Debug_Print("CNC_Advance_Instance - RA");
 	}
-	
+
 	/*
 	** Shouldn't really need to do this, but I like the idea of always running the main loop in the context of the same player.
 	** Might make tbe bugs more repeatable and consistent. ST - 3/15/2019 11:58AM
@@ -1536,6 +1547,13 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Advance_Instance(uint64 player
 		DLLExportClass::Set_Player_Context(player_id);
 	} else {
 		DLLExportClass::Set_Player_Context(DLLExportClass::GlyphxPlayerIDs[0]);
+	}
+
+	/*
+	** Restore special from backup
+	*/
+	if (SpecialBackup != NULL) {
+		memcpy(&Special, SpecialBackup, sizeof(SpecialClass));
 	}
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
@@ -1730,6 +1748,15 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Advance_Instance(uint64 player
 	//Sync_Delay();
 	//DLLExportClass::Set_Event_Callback(NULL);
 	Color_Cycle();
+	
+	
+	/*
+	** Don't respect GameActive. Game will end in multiplayer on win/loss
+	*/
+	if (GAME_TO_PLAY == GAME_GLYPHX_MULTIPLAYER) {
+		return true;
+	}
+
 	return(GameActive);
 }
 
@@ -1775,6 +1802,12 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Save_Load(bool save, const cha
 		}
 		
 		result = Load_Game(file_path_and_name);
+
+		// MBL 07.21.2020
+		if (result == false)
+		{
+			return false;
+		}
 		
 		DLLExportClass::Set_Player_Context(DLLExportClass::GlyphxPlayerIDs[0], true);
 		Set_Logic_Page(SeenBuff);
@@ -1995,6 +2028,11 @@ void DLLExportClass::Init(void)
 	CurrentLocalPlayerIndex = 0;
 
 	MessagesSent.clear();
+
+	if (SpecialBackup == NULL) {
+		SpecialBackup = new SpecialClass;
+	}
+	memcpy(SpecialBackup, &Special, sizeof(SpecialClass));
 }
 
 
@@ -2011,6 +2049,9 @@ void DLLExportClass::Init(void)
 **************************************************************************************************/
 void DLLExportClass::Shutdown(void)
 {
+	delete SpecialBackup;
+	SpecialBackup = NULL;
+
 	for (int i=0 ; i<ModSearchPaths.Count() ; i++) {
 		delete [] ModSearchPaths[i];
 	}
@@ -3117,6 +3158,7 @@ void DLL_Draw_Pip_Intercept(const ObjectClass* object, int pip)
 void DLLExportClass::DLL_Draw_Intercept(int shape_number, int x, int y, int width, int height, int flags, const ObjectClass *object, DirType rotation, long scale, const char *shape_file_name, char override_owner)
 {
 	CNCObjectStruct& new_object = ObjectList->Objects[TotalObjectCount + CurrentDrawCount];
+	memset(&new_object, 0, sizeof(new_object));
 	Convert_Type(object, new_object);
 	if (new_object.Type == UNKNOWN) {
 		return;
@@ -4259,6 +4301,8 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 					return false;
 				}
 
+				memset(&sidebar_entry, 0, sizeof(sidebar_entry));
+
 				sidebar_entry.AssetName[0] = 0;
 				sidebar_entry.Type = UNKNOWN;
 				sidebar_entry.BuildableID = Map.Column[c].Buildables[b].BuildableID;
@@ -4271,7 +4315,7 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 				sidebar_entry.SuperWeaponType = SW_NONE;
 
 				if (tech) {
-					sidebar_entry.Cost = tech->Cost * PlayerPtr->CostBias;
+					sidebar_entry.Cost = tech->Cost * PlayerPtr->CostBias; // MBL: If this gets modified, also modify below for skirmish and multiplayer
 					sidebar_entry.PowerProvided = 0;
 					sidebar_entry.BuildTime = tech->Time_To_Build(PlayerPtr->Class->House); // sidebar_entry.BuildTime = tech->Time_To_Build() / 60;
 					strncpy(sidebar_entry.AssetName, tech->IniName, CNC_OBJECT_ASSET_NAME_LENGTH);
@@ -4414,6 +4458,8 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 						return false;
 					}
 
+					memset(&sidebar_entry, 0, sizeof(sidebar_entry));
+
 					sidebar_entry.AssetName[0] = 0;
 					sidebar_entry.Type = UNKNOWN;
 					sidebar_entry.BuildableID = context_sidebar->Column[c].Buildables[b].BuildableID;
@@ -4426,7 +4472,13 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 					sidebar_entry.SuperWeaponType = SW_NONE;
 
 					if (tech) {
-						sidebar_entry.Cost = tech->Cost;
+
+						// MBL 06.22.2020	- Updated to apply and difficulty abd/or faction price modifier; See https://jaas.ea.com/browse/TDRA-6864
+						// If this gets modified, also modify above for non-skirmish / non-multiplayer
+						//
+						// sidebar_entry.Cost = tech->Cost;
+						sidebar_entry.Cost = tech->Cost * PlayerPtr->CostBias;
+
 						sidebar_entry.PowerProvided = 0;
 						sidebar_entry.BuildTime = tech->Time_To_Build(PlayerPtr->Class->House); // sidebar_entry.BuildTime = tech->Time_To_Build() / 60;
 						strncpy(sidebar_entry.AssetName, tech->IniName, CNC_OBJECT_ASSET_NAME_LENGTH);
@@ -8346,9 +8398,15 @@ bool DLLExportClass::Save(Pipe & pipe)
 	pipe.Put(&Special, sizeof(Special));
 
 	/*
+	** Special case for MPSuperWeaponDisable - store negated value so it defaults to enabled
+	*/
+	bool not_allow_super_weapons = !MPSuperWeaponDisable;
+	pipe.Put(&not_allow_super_weapons, sizeof(not_allow_super_weapons));
+
+	/*
 	** Room for save game expansion
 	*/
-	unsigned char padding[4096];
+	unsigned char padding[4095];
 	memset(padding, 0, sizeof(padding));
 	
 	pipe.Put(padding, sizeof(padding));
@@ -8431,7 +8489,23 @@ bool DLLExportClass::Load(Straw & file)
 		return false;
 	}
 
-	unsigned char padding[4096];
+	/*
+	** Restore backup
+	*/
+	if (SpecialBackup != NULL) {
+		memcpy(SpecialBackup, &Special, sizeof(SpecialClass));
+	}
+
+	/*
+	** Special case for MPSuperWeaponDisable - store negated value so it defaults to enabled
+	*/
+	bool not_allow_super_weapons = false;
+	if (file.Get(&not_allow_super_weapons, sizeof(not_allow_super_weapons)) != sizeof(not_allow_super_weapons)) {
+		return false;
+	}
+	MPSuperWeaponDisable = !not_allow_super_weapons;
+
+	unsigned char padding[4095];
 	
 	if (file.Get(padding, sizeof(padding)) != sizeof(padding)) {
 		return false;

@@ -2477,7 +2477,10 @@ bool Read_Scenario_INI(char * fname, bool )
 	UnitClass::Read_INI(ini);
 	Call_Back();
 
-    	VesselClass::Read_INI(ini);
+	AircraftClass::Read_INI(ini);
+	Call_Back();
+
+	VesselClass::Read_INI(ini);
 	Call_Back();
 
 	/*
