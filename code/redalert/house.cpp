@@ -1107,6 +1107,10 @@ void HouseClass::AI(void)
 					text = Text_String(TXT_POWER_TESLA);
 					text_id = TXT_POWER_TESLA;
 				}
+				if (BQuantity[STRUCT_PRISOM] > 0) {
+					text = "Prism towers offline";
+					text_id = TXT_POWER_TESLA;
+				}
 				if (text == NULL) {
 					text = Text_String(TXT_LOW_POWER);
 					text_id = TXT_LOW_POWER;
@@ -5429,7 +5433,8 @@ bool HouseClass::AI_Raise_Power(UrgencyType urgency) const
 		{STRUCT_IRON_CURTAIN, URGENCY_MEDIUM},
 		{STRUCT_RADAR, URGENCY_MEDIUM},
 		{STRUCT_REPAIR, URGENCY_MEDIUM},
-		{STRUCT_TESLA, URGENCY_HIGH}
+		{STRUCT_TESLA, URGENCY_HIGH},
+		{STRUCT_PRISOM, URGENCY_HIGH}
 	};
 
 	/*
@@ -5491,7 +5496,8 @@ bool HouseClass::AI_Raise_Money(UrgencyType urgency) const
 //		{STRUCT_WEAP,URGENCY_HIGH},
 //		{STRUCT_BARRACKS,URGENCY_HIGH},
 //		{STRUCT_TENT,URGENCY_HIGH},
-		{STRUCT_CONST,URGENCY_CRITICAL}
+		{STRUCT_CONST,URGENCY_CRITICAL},
+		{STRUCT_PRISOM,URGENCY_MEDIUM},
 	};
 	BuildingClass * b = 0;
 
@@ -5862,6 +5868,17 @@ int HouseClass::AI_Building(void)
 				}
 			}
 		}
+
+// jmarshall - AI build prism towers.
+		current = BQuantity[STRUCT_PRISOM];
+		b = &BuildingTypeClass::As_Reference(STRUCT_PRISOM);
+		if (Can_Build(b, ActLike) && (b->Cost_Of() < money || hasincome) && Power_Fraction() >= 1) {
+			choiceptr = BuildChoice.Alloc();
+			if (choiceptr != NULL) {
+				*choiceptr = BuildChoiceClass(URGENCY_MEDIUM, b->Type);
+			}
+		}
+// jmarshall end
 
 		/*
 		**	Build a tech center as soon as possible.
