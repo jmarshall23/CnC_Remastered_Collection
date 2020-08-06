@@ -146,8 +146,6 @@ bool	bNoMovies = false;
 KeyNumType	g_globalKeyNumType = KN_NONE;
 int			g_globalKeyFlags = 0;
 
-int			g_startFrameTime = 0;
-
 /****************************************
 **	Function prototypes for this module **
 *****************************************/
@@ -293,9 +291,7 @@ void Main_Game(int argc, char * argv[])
 		/*
 		**	Scenario-editor version of main-loop processing
 		*/
-		while(true) {
-			g_startFrameTime = Sys_Milliseconds();
-
+		for (;;) {
 			/*
 			**	Non-scenario-editor-mode: call the game's main loop
 			*/
@@ -2136,21 +2132,20 @@ static void Sync_Delay(void)
 	*/
 	while (FrameTimer) {		
 		Color_Cycle();	
-//		Call_Back();
-//
-//		if (SpecialDialog == SDLG_NONE) {
-//#ifdef WIN32
-//			WWMouse->Erase_Mouse(&HidPage, TRUE);
-//#endif	//WIN32
-//			KeyNumType input = KN_NONE;
-//			int x, y;
-//			Map.Input(input, x, y);
-//			if (input) {
-//				Keyboard_Process(input);
-//			}
-//			Map.Render();
-//		}		
-		SDL_PumpEvents();
+		Call_Back();
+
+		if (SpecialDialog == SDLG_NONE) {
+#ifdef WIN32
+			WWMouse->Erase_Mouse(&HidPage, TRUE);
+#endif	//WIN32
+			KeyNumType input = KN_NONE;
+			int x, y;
+			Map.Input(input, x, y);
+			if (input) {
+				Keyboard_Process(input);
+			}
+			Map.Render();
+		}		
 	}
 	animFrameNum+=0.5f; // This is garbage and needs to be fixed with proper delta time bits!!!
 	if (!FrameTimer) {
@@ -2915,10 +2910,10 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn, bool immediate
 
 	if (name) {
 		char fullname[_MAX_FNAME+_MAX_EXT];
-		_makepath(fullname, NULL, NULL, name, "");
+		_makepath(fullname, NULL, NULL, name, ".smk");
 		#ifdef WIN32
 		char palname [_MAX_FNAME+_MAX_EXT];
-		_makepath(palname , NULL, NULL, name, "");
+		_makepath(palname , NULL, NULL, name, ".smk");
 		#endif	//WIN32
 		#ifdef CHEAT_KEYS
 		//			Mono_Set_Cursor(0, 0);Mono_Printf("[%s]", fullname);
@@ -3366,8 +3361,8 @@ void const * Get_Radar_Icon(void const * shapefile, int shapenum, int frames, in
 	** Get the pixel width and height of the frame we built.  This will
 	** be used to extract icons and build pixels.
 	*/
-	int pixel_width  = Get_Build_Frame_Width( shapefile, shapenum);
-	int pixel_height = Get_Build_Frame_Height( shapefile, shapenum);
+	int pixel_width  = Get_Build_Frame_Width( shapefile );
+	int pixel_height = Get_Build_Frame_Height( shapefile );
 
 	/*
 	** Find the width and height in icons, adjust these by half an
@@ -3467,8 +3462,8 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile, shapenum);
-		int height = Get_Build_Frame_Height(shapefile, shapenum);
+		int width = Get_Build_Frame_Width(shapefile);
+		int height = Get_Build_Frame_Height(shapefile);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, rotation, virtualscale, NULL, HOUSE_NONE);
 		return;
 	}
@@ -3479,8 +3474,8 @@ void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapen
 void CC_Draw_Shape(const ObjectClass *object, const char *shape_file_name, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale, char override_owner)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile, shapenum);
-		int height = Get_Build_Frame_Height(shapefile, shapenum);
+		int width = Get_Build_Frame_Width(shapefile);
+		int height = Get_Build_Frame_Height(shapefile);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, rotation, virtualscale, shape_file_name, override_owner);
 		return;
 	}
@@ -3684,9 +3679,9 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 	if ((flags & SHAPE_GHOST) && (!ghostdata)) {
 		ghostdata = DisplayClass::SpecialGhost;
 	}
-	//if ((flags & SHAPE_FADING) && (!fadingdata)) {
-	//	fadingdata = DisplayClass::FadingShade;
-	//}
+	if ((flags & SHAPE_FADING) && (!fadingdata)) {
+		fadingdata = DisplayClass::FadingShade;
+	}
 
 	static unsigned char * _xbuffer = 0;
 
@@ -3696,9 +3691,8 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 
 	if (shapefile != NULL && shapenum != -1) {
 
-		// With TS tiles, the smaller image buffer gets blit into a buffer that's the size of the entire image.
-		int width = Get_Build_Frame_Width(shapefile, -1);
-		int height = Get_Build_Frame_Height(shapefile, -1);
+		int width = Get_Build_Frame_Width(shapefile);
+		int height = Get_Build_Frame_Height(shapefile);
 
 #ifdef NEVER
 		/*
@@ -3719,63 +3713,73 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 #endif
 
 
-
+#ifdef WIN32
 		/*
 		** In WIn95, build shape returns a pointer to the shape not its size
 		*/
 
 		Image_t* shape_image = NULL;
-		char tmp[512];
-		if (CCGlobalShadowRender) {
-			sprintf(tmp, "h_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
-		}
-		else {
-			sprintf(tmp, "s_%I64u_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
-		}
-		shape_image = Find_Image(tmp);
+		shape_pointer = Build_Frame(shapefile, shapenum, _ShapeBuffer);
 
-		if (!shape_image)
-		{
-			shape_pointer = Build_Frame(shapefile, shapenum, _ShapeBuffer);
+		if (shape_pointer) {
+			//GraphicViewPortClass draw_window(LogicPage->Get_Graphic_Buffer(),
+			//											WindowList[window][WINDOWX] + LogicPage->Get_XPos(),
+			//											WindowList[window][WINDOWY] + LogicPage->Get_YPos(),
+			//											WindowList[window][WINDOWWIDTH],
+			//											WindowList[window][WINDOWHEIGHT]);
+			unsigned char * buffer = (unsigned char *) shape_pointer;	//Get_Shape_Header_Data((void*)shape_pointer);
 
-			if (shape_pointer) {
-				//GraphicViewPortClass draw_window(LogicPage->Get_Graphic_Buffer(),
-				//											WindowList[window][WINDOWX] + LogicPage->Get_XPos(),
-				//											WindowList[window][WINDOWY] + LogicPage->Get_YPos(),
-				//											WindowList[window][WINDOWWIDTH],
-				//											WindowList[window][WINDOWHEIGHT]);
-				unsigned char* buffer = (unsigned char*)shape_pointer;	//Get_Shape_Header_Data((void*)shape_pointer);
+#else	//WIN32
+		if ( Build_Frame(shapefile, shapenum, _ShapeBuffer ) <= (unsigned long)_ShapeBufferSize) {
+			GraphicViewPortClass draw_window(LogicPage,
+														WindowList[window][WINDOWX],
+														WindowList[window][WINDOWY],
+														WindowList[window][WINDOWWIDTH],
+														WindowList[window][WINDOWHEIGHT]);
+			unsigned char * buffer = (unsigned char *)_ShapeBuffer;
+#endif	//WIN32
 
-				UseOldShapeDraw = false;
+			UseOldShapeDraw = false;
+			/*
+			**	Rotation handler.
+			*/
+			if (rotation != DIR_N) {
+
 				/*
-				**	Rotation handler.
+				** Get the raw shape data without the new header and flag to use the old shape drawing
 				*/
-				if (rotation != DIR_N) {
+				UseOldShapeDraw = true;
+#ifdef WIN32
+				buffer = (unsigned char *) Get_Shape_Header_Data((void*)shape_pointer);
+#endif
 
-					/*
-					** Get the raw shape data without the new header and flag to use the old shape drawing
-					*/
-					UseOldShapeDraw = true;
+				if (Debug_Rotate) {
+#if (0)//PG
+					GraphicBufferClass src(width, height, buffer);
+					width *= 2;
+					height *= 2;
+					memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
+					GraphicBufferClass dst(width, height, _xbuffer);
+					Rotate_Bitmap(&src, &dst, rotation);
+					buffer = _xbuffer;
+#endif
+				} else {
 
-					buffer = (unsigned char*)Get_Shape_Header_Data((void*)shape_pointer);
+					BitmapClass bm(width, height, buffer);
+					width *= 2;
+					height *= 2;
+					memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
+					GraphicBufferClass gb(width, height, _xbuffer);
+					TPoint2D pt(width/2, height/2);
 
-
-					if (Debug_Rotate) {
-
-					}
-					else {
-
-						BitmapClass bm(width, height, buffer);
-						width *= 2;
-						height *= 2;
-						memset(_xbuffer, '\0', SHAPE_BUFFER_SIZE);
-						GraphicBufferClass gb(width, height, _xbuffer);
-						TPoint2D pt(width / 2, height / 2);
-
-						gb.Scale_Rotate(bm, pt, 0x0100, (256 - (rotation - 64)));
-						buffer = _xbuffer;
-					}
+					gb.Scale_Rotate(bm, pt, 0x0100, (256-(rotation-64)));
+					buffer = _xbuffer;
 				}
+			}
+
+			{
+				char tmp[512];
+				sprintf(tmp, "s_%d_%d_%d_%d_%d", shapefile, shapenum, rotation, fadingdata, flags);
 
 				if (flags & SHAPE_FADING) {
 					shape_image = Image_CreateImageFrom8Bit(tmp, width, height, (unsigned char*)buffer, (unsigned char*)fadingdata);
@@ -3784,34 +3788,34 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 					shape_image = Image_CreateImageFrom8Bit(tmp, width, height, (unsigned char*)buffer, NULL);
 				}
 			}
-		}
 
-		if (shape_image)
-		{
 			/*
 			**	Special shadow drawing code (used for aircraft and bullets).
 			*/
-			if ((flags & (SHAPE_FADING | SHAPE_PREDATOR)) == (SHAPE_FADING | SHAPE_PREDATOR)) {
-				flags = flags & ~(SHAPE_FADING | SHAPE_PREDATOR);
+			if ((flags & (SHAPE_FADING|SHAPE_PREDATOR)) == (SHAPE_FADING|SHAPE_PREDATOR)) {
+				flags = flags & ~(SHAPE_FADING|SHAPE_PREDATOR);
 				flags = flags | SHAPE_GHOST;
 				ghostdata = DisplayClass::SpecialGhost;
 			}
 
 			predoffset = Frame;
 
-			if ((flags & (SHAPE_GHOST | SHAPE_FADING)) == (SHAPE_GHOST | SHAPE_FADING)) {
-				Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, fadingdata, 1, predoffset);
-			}
-			else {
-				if (flags & SHAPE_FADING) {
-					Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, fadingdata, 1, predoffset);
-				}
-				else {
-					if (flags & SHAPE_PREDATOR) {
-						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, predoffset);
-					}
-					else {
-						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, predoffset);
+			//if (x > ( WindowList[window][WINDOWWIDTH] << 2)) {
+			//	predoffset = -predoffset;
+			//}
+
+			{
+				if ((flags & (SHAPE_GHOST|SHAPE_FADING)) == (SHAPE_GHOST|SHAPE_FADING)) {
+					Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, fadingdata, 1, predoffset);
+				} else {
+					if (flags & SHAPE_FADING) {
+						Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, fadingdata, 1, predoffset);
+					} else {
+						if (flags & SHAPE_PREDATOR) {
+							Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, predoffset);
+						} else {
+							Buffer_Frame_To_Page(-1, x, y, width, height, shape_image, window, flags | SHAPE_TRANS, ghostdata, predoffset);
+						}
 					}
 				}
 			}
@@ -3860,8 +3864,8 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	shape = (char *)_ShapeBuffer;
 #endif
 
-	int width = Get_Build_Frame_Width(shapedata, shapenum);
-	int height = Get_Build_Frame_Height(shapedata, shapenum);
+	int width = Get_Build_Frame_Width(shapedata);
+	int height = Get_Build_Frame_Height(shapedata);
 
 	rect.X = 0;
 	rect.Y = 0;

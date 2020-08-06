@@ -251,7 +251,7 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	}
 
 	if (wsa_hardware_image == NULL) {
-		wsa_hardware_image = Image_CreateBlankImage("wsa", file_header.pixel_width, file_header.pixel_height, true);
+		wsa_hardware_image = Image_CreateBlankImage("wsa", file_header.pixel_width, file_header.pixel_height);
 	}
 	Sys_SetOverlayImage(wsa_hardware_image);
 	wsa_palette = palette;
@@ -646,7 +646,7 @@ BOOL __cdecl Animate_Frame(void *handle, GraphicViewPortClass& view,
 #endif
 	}
 
-	Image_UploadRaw(wsa_hardware_image, (uint8_t *)view.Get_Offset(), true, wsa_palette, true);
+	Image_UploadRaw(wsa_hardware_image, (uint8_t *)view.Get_Offset(), true, wsa_palette);
 
 	view.Unlock();
 	return TRUE;

@@ -378,7 +378,7 @@ void ScoreClass::Presentation(void)
 	/*
 	** Fix for the score screen crash due to uncompressed shape buffer overflow.
 	*/
-//	Disable_Uncompressed_Shapes();
+	Disable_Uncompressed_Shapes();
 #endif	//FIXIT
 	PseudoSeenBuff = new GraphicBufferClass(SeenBuff.Get_Width(),SeenBuff.Get_Height(),(void*)NULL);
 #endif
@@ -863,7 +863,7 @@ Keyboard->Clear();
 	/*
 	** Fix for the score screen crash due to uncompressed shape buffer overflow.
 	*/
-//	Enable_Uncompressed_Shapes();
+	Enable_Uncompressed_Shapes();
 #endif	//FIXIT
 
 #endif

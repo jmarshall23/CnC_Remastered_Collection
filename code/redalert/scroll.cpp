@@ -105,67 +105,36 @@ void ScrollClass::AI(KeyNumType &input, int x, int y)
 		bool noscroll = false;
 
 		if (!noscroll) {
-			
-			int screen_width = SeenBuff.Get_Width();
-			int screen_height = SeenBuff.Get_Height();
-
-			bool at_screen_edge = false;
-			
-			if (!Debug_Map || !Debug_LockScroll) {
-				at_screen_edge = (y == 0 || x == 0 || x >= screen_width - 1 || y >= screen_height - 1);
-			}			
+			bool at_screen_edge = (y == 0 || x == 0 || x >= SeenBuff.Get_Width()-1 || y >= SeenBuff.Get_Height()-1);
 
 			/*
 			**	Verify that the mouse is over a scroll region.
 			*/
-			if (at_screen_edge) {
+			if (Inertia || at_screen_edge) {
 				if (at_screen_edge) {
 
-					player_scrolled = true;
+					player_scrolled=true;
 
-					//int half_screen_width = screen_width / 2;
-					//int half_screen_height = screen_height / 2;
-					//
-					///*
-					//**	Adjust the mouse coordinates to emphasize the
-					//**	cardinal directions over the diagonals.
-					//*/
-					//int altx = x;
-					//int alty = y;
-					//
-					//if (alty == 0 || alty >= screen_height - 1){
-					//	if (altx != (half_screen_width)) { 
-					//		float offset_x = (half_screen_width - altx) * .7;
-					//		altx = altx + offset_x;
-					//	}
-					//}
-					//
-					//direction = (DirType)Desired_Facing256((half_screen_width), (half_screen_height), altx, alty);
-					if(x == 0 && y == 0) {
-						direction = DIR_NW;
+					/*
+					**	Adjust the mouse coordinates to emphasize the
+					**	cardinal directions over the diagonals.
+					*/
+					int altx = x;
+					if (altx < 50 * RESFACTOR) altx -= ((50 * RESFACTOR)-altx);
+					altx = max(altx, 0);
+					if (altx > ((320-50) * RESFACTOR)) altx += altx-((320-50) * RESFACTOR);
+					altx = min(altx, (320 * RESFACTOR));
+					if (altx > (50 * RESFACTOR) && altx < ((320-50) * RESFACTOR)) {
+						altx += (((320/2) * RESFACTOR)-altx)/2;
 					}
-					else if (x >= screen_width - 1 && y == 0) {
-						direction = DIR_NE;
-					}
-					else if (x == 0 && y >= screen_height - 1) {
-						direction = DIR_SW;
-					}
-					else if (x >= screen_width - 1 && y >= screen_height - 1) {
-						direction = DIR_SE;
-					}
-					else if(x == 0) 
-					{
-						direction = DIR_W;
-					}
-					else if(y == 0) {
-						direction = DIR_N;
-					}
-					else if(y >= screen_height - 1) {
-						direction = DIR_S;
-					}
-					else if(x >= screen_width - 1) {
-						direction = DIR_E;
-					}
+
+					int alty = y;
+					if (alty < (50 * RESFACTOR)) alty -= (50 * RESFACTOR)-alty;
+					alty = max(alty, 0);
+					if (alty > (150 * RESFACTOR)) alty += alty-(150 * RESFACTOR);
+					alty = min(alty, 200 * RESFACTOR);
+
+					direction = (DirType)Desired_Facing256((320/2) * RESFACTOR, (200/2) * RESFACTOR, altx, alty);
 				}
 
 				int control = Dir_Facing(direction);
@@ -199,9 +168,9 @@ void ScrollClass::AI(KeyNumType &input, int x, int y)
 				/*
 				**	Increase the scroll rate if the mouse button is held down.
 				*/
-				//			if (Keyboard->Down(KN_LMOUSE)) {
-				//				rate = Bound(rate-3, 0, 4);
-				//			}
+	//			if (Keyboard->Down(KN_LMOUSE)) {
+	//				rate = Bound(rate-3, 0, 4);
+	//			}
 				if (Keyboard->Down(KN_RMOUSE)) {
 					rate = Bound(rate+1, 4, (int)(sizeof(_rate)/sizeof(_rate[0]))-1);
 				}
@@ -211,7 +180,7 @@ void ScrollClass::AI(KeyNumType &input, int x, int y)
 				**	one of the 8 facings, then adjust the direction value
 				**	accordingly.
 				*/
-				//direction = Facing_Dir(Dir_Facing(direction)) - (1<<5);
+				direction = Facing_Dir(Dir_Facing(direction));
 
 				int distance = _rate[rate]/2;
 

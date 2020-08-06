@@ -45,7 +45,6 @@
 */
 class CellClass
 {
-	friend class DisplayClass;
 	public:
 		/*
 		**	This is the ID number of this cell. By placing the ID number here, it doesn't have
@@ -178,16 +177,6 @@ class CellClass
 		ObjectClass * Overlapper[6];
 #endif
 
-		class BigOverlay* bigOverlay;
-
-
-		int visibleFrame;
-		int x_world_pos;
-		int y_world_pos;
-		int x_screen_pos;
-		int y_screen_pos;
-		int debug_select;
-		bool inShadow;
 
 		/*
 		**	Per-player view of whether a cell is mapped. One bit for each house type. ST - 8/2/2019 3:00PM
@@ -287,15 +276,10 @@ class CellClass
 		void Code_Pointers(void);
 		void Decode_Pointers(void);
 
-		static void ConvertCoordsToIsometric(int& x, int& y);
-		static void ConvertIsoCoordsToScreen(int& x, int& y);
-		static bool ScreenCoordsToIsoTile(int x, int y, int& tileX, int& tileY);
-		static bool ScreenCoordsToIsoCoords(COORDINATE screenCoord, COORDINATE& isoCoord);
-
 		/*
 		**	Display and rendering controls.
 		*/
-		void Draw_It(int x, int y, bool objects=false);
+		void Draw_It(int x, int y, bool objects=false) const;
 		void Redraw_Objects(bool forced=false);
 		void Shimmer(void);
 
@@ -335,15 +319,8 @@ class CellClass
 		*/
 		void Override_Land_Type(LandType type);
 
-
-		int GetLastRenderX(void) { return lastRenderX; }
-		int GetLastRenderY(void) { return lastRenderY; }
-
 	private:
 		CellClass (CellClass const &) ;
-
-		int lastRenderX;
-		int lastRenderY;
 
 		LandType Land;			// The land type of this cell.
 

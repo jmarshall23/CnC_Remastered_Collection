@@ -892,17 +892,17 @@ bool Select_Game(bool fade)
 
 					if (!Special.IsFromInstall) {
 						if (AntsEnabled)  {
-							Scen.Set_Scenario_Name("SCA01EA.MAP");
+							Scen.Set_Scenario_Name("SCA01EA.INI");
 						} else {
 							switch (WWMessageBox().Process(TXT_CHOOSE, TXT_ALLIES, TXT_CANCEL, TXT_SOVIET)) {
 								case 2:
-									Scen.Set_Scenario_Name("SCU01EA.MAP");
+									Scen.Set_Scenario_Name("SCU01EA.INI");
 									break;
 								default:
 									selection = SEL_NONE;
 									continue;
 								case 0:
-									Scen.Set_Scenario_Name("SCG01EA.MAP");
+									Scen.Set_Scenario_Name("SCG01EA.INI");
 									break;
 
 							}
@@ -917,9 +917,9 @@ bool Select_Game(bool fade)
 						Hide_Mouse();
 
 						if (CurrentCD == 0) {
-							Scen.Set_Scenario_Name("SCG01EA.MAP");
+							Scen.Set_Scenario_Name("SCG01EA.INI");
 						} else {
-							Scen.Set_Scenario_Name("SCU01EA.MAP");
+							Scen.Set_Scenario_Name("SCU01EA.INI");
 						}
 					}
 
@@ -1319,11 +1319,17 @@ bool Select_Game(bool fade)
 					PlayerPtr = HouseClass::As_Pointer(HOUSE_SPAIN);
 					PlayerPtr->IsHuman = true;
 					Base.House = HOUSE_USSR;
+					//LastHouse = HOUSE_GOOD;
 					Fill_In_Data();
+					//Size_Map(-1, -1, 30, 30);
+					Scen.Waypoint[WAYPT_REINF] = XY_Cell(Map.MapCellX + Map.MapCellWidth / 2, Map.MapCellY + Map.MapCellHeight / 2);
+					Scen.Waypoint[WAYPT_HOME] = XY_Cell(Map.MapCellX + Map.MapCellWidth / 2, Map.MapCellY + Map.MapCellHeight / 2);
+//					(*this)[TacticalCoord].IsWaypoint = 1;
+					Map.Flag_Cell(Coord_Cell(Map.TacticalCoord));
+					Map.Set_Tactical_Position(Cell_Coord(Scen.Waypoint[WAYPT_HOME] - (MAP_CELL_W * 4 * RESFACTOR) - (5 * RESFACTOR)));
 					Go_Editor(true);
 					process = false;
 					Debug_SkipBriefing = true;
-					Debug_RenderEditorSplash = true;
 #else
 					Theme.Fade_Out();
 
@@ -3006,25 +3012,6 @@ static void Init_Bootstrap_Mixfiles(void)
 	int temp = RequiredCD;
 	RequiredCD = -2;
 
-	new MFCD("expand3.mix", &FastKey, MIX_FILE_TS);
-	{
-		bool ok = MFCD::Cache("expand3.mix");
-		assert(ok);
-	}
-
-// Isometric Files 
-	new MFCD("isosnow.mix", &FastKey, MIX_FILE_TS);
-	{
-		bool ok = MFCD::Cache("isosnow.mix");
-		assert(ok);
-	}
-	new MFCD("isotemp.mix", &FastKey, MIX_FILE_TS);
-	{
-		bool ok = MFCD::Cache("isotemp.mix");
-		assert(ok);
-	}
-// jmarshall end
-
 #ifdef WOLAPI_INTEGRATION
 	CCFileClass fileWolapiMix( "WOLAPI.MIX" );
 	if( fileWolapiMix.Is_Available() )
@@ -3090,15 +3077,6 @@ static void Init_Bootstrap_Mixfiles(void)
 	ok = MFCD::Cache("LORES.MIX");
 	assert(ok);
 #endif	//WIN32
-
-
-// Isometric Files 
-	new MFCD("cache.mix", &FastKey, MIX_FILE_TS);
-	{
-		bool ok = MFCD::Cache("cache.mix");
-		assert(ok);
-	}
-// jmarshall end
 
 	RequiredCD = temp;
 }

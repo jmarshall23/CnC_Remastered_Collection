@@ -41,7 +41,7 @@
 
 #include	"function.h"
 #include	"template.h"
-#include    "image.h"
+
 
 /***********************************************************************************************
  * TemplateClass::Init -- Resets the template object system.                                   *
@@ -87,11 +87,10 @@ bool TemplateClass::Mark(MarkType mark)
 	assert(IsActive);
 
 	static bool noup = false;
-	IsoTile* isoTile = (IsoTile *)Get_Image_Data();
-	
-	if (isoTile && ObjectClass::Mark(mark)) {
+	void const * iset = Get_Image_Data();
+	if (iset && ObjectClass::Mark(mark)) {
 
-		//void * map = Get_Icon_Set_Map(iset);
+		void * map = Get_Icon_Set_Map(iset);
 
 		for (int y = 0; y < Class->Height; y++) {
 			for (int x = 0; x < Class->Width; x++) {
@@ -105,10 +104,10 @@ bool TemplateClass::Mark(MarkType mark)
 					**	icon is associated with this logical position, then don't do any action
 					**	since none is required.
 					*/
-					//char * mapptr = (char*)map;
-					//bool real = (mapptr[number] != -1);
-					if(isoTile->GetTileInfo(number) != NULL)
-					{
+					char * mapptr = (char*)map;
+					bool real = (mapptr[number] != -1);
+
+					if (real) {
 						/*
 						**	Lift the terrain object from the map.
 						*/

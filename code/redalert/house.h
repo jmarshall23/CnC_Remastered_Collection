@@ -688,7 +688,6 @@ class HouseClass {
 		// Added so the ally flags could be sent to client machines - 09 / 12 / 2019 JAS
 		unsigned Get_Ally_Flags();
 
-		void ToggleFireSaleAbility(bool fireSaleEnabled) { this->fireSaleAvailable = fireSaleEnabled; }
 		bool Fire_Sale(void);
 		bool Is_Hack_Prevented(RTTIType rtti, int value) const;
 		bool Is_No_YakMig(void) const;
@@ -851,8 +850,6 @@ class HouseClass {
 		int AI_Vessel(void);
 		int AI_Infantry(void);
 		int AI_Aircraft(void);
-
-		bool fireSaleAvailable;
 
 		/*
 		**	This is a bit field record of all the other houses that are allies with

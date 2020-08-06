@@ -464,104 +464,18 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 	void const * shapefile = Get_Image_Data();
 	if (shapefile == NULL) return;
 
-	y = y + Class->RenderOffsetY;
-		
 	/*
 	**	Actually draw the building shape.
 	*/
 	IsTheaterShape = Class->IsTheater;	//Let Build_Frame know if this is a theater specific shape
-// jmarshall - shadows are going to need to be done differently, but for now this will work.
-	if (Get_Build_TS_Shape(shapefile) && hdimage == NULL)
-	{
-		CCGlobalShadowRender = true;
-		{
-			int shadowFrameOffset = Get_Build_Frame_Count(shapefile) / 2;
-			Techno_Draw_Object(shapefile, shadowFrameOffset + Shape_Number(), x, y, window);
-		}
-		if (Class->IdleHasShadowFrames && Class->IdleAnimShape != NULL) {
-			int shapeNum = animFrameNum;
-			int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
-			if (Class->IdleAnimNonDamagedFrames != -1) {
-				maxframes = Class->IdleAnimNonDamagedFrames;
-			}
-
-			shapeNum = shapeNum % maxframes;
-			int shadowFrameOffset = Get_Build_Frame_Count(Class->IdleAnimShape) / 2;
-			Techno_Draw_Object(Class->IdleAnimShape, shadowFrameOffset + shapeNum, x, y, window);
-		}
-		CCGlobalShadowRender = false;
+// jmarshall - added HD support
+	if (hdimage != NULL) {
+		Techno_Draw_Object_HD(hdimage, Shape_Number(), x, y, window);
+	}
+	else {
+		Techno_Draw_Object(shapefile, Shape_Number(), x, y, window);
 	}
 // jmarshall end
-
-// jmarshall - added HD support & custom palette support.
-	PaletteClass globalPal = CCPalette;
-	if(Class->CustomTheatrePalette[LastTheater] != NULL) {
-		CCGlobalOveridePalette = (void *)Class->CustomTheatrePalette[LastTheater];
-		HouseTypeClass* houseType = House->Class;
-
-		if (houseType->House >= HOUSE_MULTI1) {
-			CCPaletteHouseColor = House->RemapColor;
-		}
-		else if (houseType->House <= HOUSE_TURKEY) {
-			CCPaletteHouseColor = houseType->House;
-		}
-		else {
-			CCPaletteHouseColor = 0;
-		}
-	}
-
-	{
-		int animShapeNum = Shape_Number();
-
-		// If we have a seperate activation animation, play that instead of cycling through the frames here.
-		if ((BState == BSTATE_ACTIVE || IsCharging) && Class->ActiveAnimAnimShape != NULL){
-			animShapeNum = 0;
-		}
-
-		if (hdimage != NULL) {
-			Techno_Draw_Object_HD(hdimage, animShapeNum, x, y, window);
-		}
-		else {
-			Techno_Draw_Object(shapefile, animShapeNum, x, y, window);
-		}
-	}
-// jmarshall end
-	
-// jmarshall idle/construction animation
-	// Only play the idle animation if we have power!
-	if (Class->IdleAnimIgnorePowerState || !Class->IsPowered || (Class->IsPowered && House->Power_Fraction() >= 1)) {
-		if (Class->IdleAnimShape != NULL) {
-			int shapeNum = animFrameNum;
-			int maxframes = Get_Build_Frame_Count(Class->IdleAnimShape);
-			if (Class->IdleAnimNonDamagedFrames != -1) {
-				maxframes = Class->IdleAnimNonDamagedFrames;
-			}
-
-			shapeNum = shapeNum % maxframes;
-			Techno_Draw_Object(Class->IdleAnimShape, shapeNum, x, y, window);
-		}
-	}
-
-	if ((BState == BSTATE_ACTIVE || IsCharging) && Class->ActiveAnimAnimShape != NULL) {
-		int shapeNum = Shape_Number();
-		// If we are charging play the charging anims.
-		if (IsCharging) {
-			shapeNum = customAnimFrames;
-			((BuildingClass * )this)->customAnimFrames += 0.5;
-		}
-
-		int maxframes = Get_Build_Frame_Count(Class->ActiveAnimAnimShape);
-		if (Class->ActiveAnimNonDamagedFrames != -1) {
-			maxframes = Class->ActiveAnimNonDamagedFrames;
-		}
-
-		shapeNum = shapeNum % maxframes;
-		Techno_Draw_Object(Class->ActiveAnimAnimShape, shapeNum, x, y, window);
-	}
-
-	CCGlobalOveridePalette = NULL;
-// jmarshall end
-
 	IsTheaterShape = false;
 
 	/*
@@ -611,7 +525,7 @@ void BuildingClass::Draw_It(int x, int y, WindowNumberType window) const
 		}
 	}
 
-	TechnoClass::Draw_It(x, y - Class->RenderOffsetY, window);
+	TechnoClass::Draw_It(x, y, window);
 
 	/*
 	** If this is a factory that we're spying on, show what it's producing
@@ -3690,7 +3604,6 @@ int BuildingClass::Mission_Construction(void)
 				Sound_Effect(VOC_CONSTRUCTION, Coord);
 			}
 			Status = DURING;
-			IsReadyToCommence = false;
 			break;
 
 		case DURING:
@@ -4859,11 +4772,6 @@ void const * BuildingClass::Remap_Table(void)
 {
 	assert(Buildings.ID(this) == ID);
 	assert(IsActive);
-// jmarshall
-	if(!Class->IsRemappable) {
-		return NULL;
-	}
-// jmarshall end
 
 	return(House->Remap_Table(IsBlushing, Class->Remap));
 }
@@ -5805,16 +5713,7 @@ void BuildingClass::Charging_AI(void)
 	if (Class->PrimaryWeapon != NULL && Class->PrimaryWeapon->IsElectric && BState != BSTATE_CONSTRUCTION) {
 		if (Target_Legal(TarCom) && House->Power_Fraction() >= 1) {
 			if (!IsCharged) {
-				if (Class->ActiveAnimAnimShape && IsCharging) {
-					Mark(MARK_CHANGE);
-					if (customAnimFrames >= Class->ActiveAnimNonDamagedFrames) {
-						IsCharged = true;
-						IsCharging = false;
-						customAnimFrames = 0;
-						Set_Rate(0);
-					}
-				}
-				else if (IsCharging) {
+				if (IsCharging) {
 //					if (stagechange) {
 						Mark(MARK_CHANGE);
 						if (Fetch_Stage() >= 9) {
@@ -5826,7 +5725,6 @@ void BuildingClass::Charging_AI(void)
 				} else if (!Arm) {
 					IsCharged = false;
 					IsCharging = true;
-					customAnimFrames = 0;
 					Set_Stage(0);
 					Set_Rate(3);
 					Sound_Effect(VOC_TESLA_POWER_UP, Coord);

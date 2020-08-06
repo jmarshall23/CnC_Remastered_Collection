@@ -154,9 +154,6 @@ class WeaponTypeClass
 		**	This is the animation to display at the firing coordinate.
 		*/
 		AnimType Anim;
-
-		// Is this a prism weapon.
-		unsigned Prism:1;
 };
 
 

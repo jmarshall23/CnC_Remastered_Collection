@@ -144,13 +144,7 @@
         -- Counterstrike only:
         ANT1=14,    -- First ant type
         ANT2=15,    -- Second ant type
-        ANT3=16,     -- Third ant type
-
-	-- Aftermath
-	CHRONOTANK=17, -- Chrono shifting tank
-	TESLATANK=18, -- Tesla Tank
-	MAD=19,
-	DEMOTRUNK
+        ANT3=16     -- Third ant type
     }
 
     -- *********************************************************

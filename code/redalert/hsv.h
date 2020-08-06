@@ -75,6 +75,4 @@ class HSVClass
 		unsigned char Value;
 };
 
-RGBClass GetHSVHouseColor(HSVClass& hsv, int index);
-
 #endif

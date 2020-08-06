@@ -125,10 +125,11 @@ SidebarClass::StripClass::SelectButton[COLUMNS][MAX_VISIBLE];
 /*
 ** Shape data pointers
 */
-struct Image_t*SidebarClass::StripClass::LogoShapes = NULL;
+void* SidebarClass::StripClass::LogoShapes = NULL;
+void* SidebarClass::StripClass::LogoShapesHD = NULL;
 
 void const* SidebarClass::StripClass::ClockShapes;
-struct Image_t *SidebarClass::StripClass::SpecialShapes[SPC_COUNT];
+void const* SidebarClass::StripClass::SpecialShapes[SPC_COUNT];
 
 
 /***********************************************************************************************
@@ -1063,8 +1064,7 @@ bool SidebarClass::Activate(int control)
 		**	activate it on the left side of the screen.
 		*/
 		if (IsSidebarActive /*&& X*/) {
-			//Set_View_Dimensions(0, 8 * RESFACTOR, SeenBuff.Get_Width() - (SIDE_WIDTH * RESFACTOR));
-			Set_View_Dimensions(0, 0);
+			Set_View_Dimensions(0, 8 * RESFACTOR, SeenBuff.Get_Width() - (SIDE_WIDTH * RESFACTOR));
 
 			IsToRedraw = true;
 			Help_Text(TXT_NONE);
@@ -1173,7 +1173,10 @@ void SidebarClass::StripClass::One_Time(int)
 	for (SpecialWeaponType lp = SPC_FIRST; lp < SPC_COUNT; lp++) {
 		char buffer[_MAX_FNAME];
 		sprintf(buffer, "%sICON", SpecialWeaponFile[lp]);
-		SpecialShapes[lp] = ObjectTypeClass::LoadCameoImage(buffer);
+
+		char	fullname[_MAX_FNAME + _MAX_EXT];
+		_makepath(fullname, NULL, NULL, buffer, ".SHP");
+		SpecialShapes[lp] = MFCD::Retrieve(fullname);
 	}
 }
 
@@ -1193,7 +1196,7 @@ void SidebarClass::StripClass::One_Time(int)
  * HISTORY:                                                                                    *
  *   05/19/1995 JLB : commented                                                                *
  *=============================================================================================*/
-struct Image_t* SidebarClass::StripClass::Get_Special_Cameo(SpecialWeaponType type)
+void const* SidebarClass::StripClass::Get_Special_Cameo(SpecialWeaponType type)
 {
 	if ((unsigned)type < SPC_COUNT) {
 		return(SpecialShapes[type]);
@@ -1331,16 +1334,16 @@ void SidebarClass::StripClass::Reload_LogoShapes(void)
 	** Load hi-res strip art here since it is player side specific
 	*/
 	static char* stripnames[] = {
-		"stripna",		//Nato
-		"stripna",
-		"stripus",		//USSR
-		"stripna",
-		"stripus",		//UKRAINE
-		"stripna",
-		"stripna",
-		"stripna",
-		"stripna",		//HOUSE_GOOD
-		"stripus",		//HOUSE_BAD
+		"stripna.shp",		//Nato
+		"stripna.shp",
+		"stripus.shp",		//USSR
+		"stripna.shp",
+		"stripus.shp",		//UKRAINE
+		"stripna.shp",
+		"stripna.shp",
+		"stripna.shp",
+		"stripna.shp",		//HOUSE_GOOD
+		"stripus.shp",		//HOUSE_BAD
 	};
 
 	int houseloaded = 0;
@@ -1357,7 +1360,7 @@ void SidebarClass::StripClass::Reload_LogoShapes(void)
 		return;
 	// jmarshall end
 
-	LogoShapes = ObjectTypeClass::LoadCameoImage(stripnames[houseloaded]);
+	LogoShapes = (void*)MFCD::Retrieve(stripnames[houseloaded]);
 }
 
 /***********************************************************************************************
@@ -1744,7 +1747,7 @@ void SidebarClass::StripClass::Draw_It(bool complete)
 			bool completed;
 			int  stage;
 			bool darken = false;
-			struct Image_t *shapefile = 0;
+			void const* shapefile = 0;
 			int shapenum = 0;
 			void const* remapper = 0;
 			FactoryClass* factory = 0;
@@ -1863,7 +1866,7 @@ void SidebarClass::StripClass::Draw_It(bool complete)
 			** Don't draw blank shapes over the new 640x400 sidebar art - ST 5/1/96 6:01PM
 			*/
 			if (shapenum != SB_BLANK || shapefile != LogoShapes) {
-				CC_DrawHD_Shape(shapefile, shapenum,
+				CC_Draw_Shape(shapefile, shapenum,
 					x - (WindowList[WINDOW_SIDEBAR][WINDOWX]) + (LEFT_EDGE_OFFSET * RESFACTOR),
 					y - WindowList[WINDOW_SIDEBAR][WINDOWY],
 					WINDOW_SIDEBAR,

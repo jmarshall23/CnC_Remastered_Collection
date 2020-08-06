@@ -37,16 +37,11 @@
 
 #include	"map.h"
 #include	"layer.h"
-#include    "tacticalcoord.h"
 
-class RenderTexture;
 struct Image_t;
-class BigOverlay;
 
-// jmarshall - isometric
-#define	ICON_PIXEL_W	 		48
+#define	ICON_PIXEL_W	 		24
 #define	ICON_PIXEL_H			24
-// jmarshall end
 #define	ICON_LEPTON_W			256
 #define	ICON_LEPTON_H			256
 #define	CELL_PIXEL_W	 		ICON_PIXEL_W
@@ -63,28 +58,17 @@ class BigOverlay;
 
 extern COORDINATE Coord_Add(COORDINATE coord1, COORDINATE coord2);
 
-struct CellCache_t {
-	CellCache_t() {
-		ptr = NULL;
-	}
-	CellClass* ptr;
-};
-
-struct CellDisplayCache_t {
-	CellDisplayCache_t() {
-		ptr = NULL;
-		lastFrameRendered = 0;
-	}
-	CellClass* ptr;
-	int lastFrameRendered;
-};
-
 class DisplayClass: public MapClass
 {
 	public:
 		friend class DLLExportClass;	// ST - 5/13/2019
 
-		DisplayTacticalCoord TacticalCoord;
+		/*
+		** The tactical map display position is indicated by the cell of the
+		**	upper left hand corner. These should not be altered directly. Use
+		**	the Set_Tactical_Position function instead.
+		*/
+		COORDINATE TacticalCoord;
 
 		/*
 		**	The dimensions (in cells) of the visible window onto the game map. This tactical
@@ -92,8 +76,6 @@ class DisplayClass: public MapClass
 		*/
 		LEPTON TacLeptonWidth;
 		LEPTON TacLeptonHeight;
-
-		Rect TacViewportRect;
 
 		/*
 		**	These layer control elements are used to group the displayable objects
@@ -111,9 +93,6 @@ class DisplayClass: public MapClass
 		short const *CursorSize;
 		short CursorShapeSave[256];	// For save/load
 		bool ProximityCheck;				// Is proximity check ok?
-		
-		int zoomLevel;
-		RenderTexture* sceneRenderTexture;
 
 		/*
 		** This holds the building type that is about to be placed upon the map.
@@ -137,7 +116,7 @@ class DisplayClass: public MapClass
 		static unsigned char MouseTranslucentTable[(4+1)*256];
 		static void const *TransIconset;
 // jmarshall
-		static Image_t* TransIconsetHD[3];
+		static Image_t* TransIconsetHD;
 // jmarshall end
 		static unsigned char UnitShadow[(USHADOW_COL_COUNT+1)*256];
 		static unsigned char UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
@@ -163,8 +142,6 @@ class DisplayClass: public MapClass
 		*/
 		virtual void AI(KeyNumType &input, int x, int y);
 		virtual void Draw_It(bool complete=false);
-
-		virtual void FlagBigOverlayCells(BigOverlay* overlay, int screenx, int screeny);
 
 		/*
 		**	Added functionality.
@@ -199,7 +176,6 @@ class DisplayClass: public MapClass
 		void Select_These(COORDINATE coord1, COORDINATE coord2, bool additive = false);
 		COORDINATE Pixel_To_Coord(int x, int y) const;
 		bool Coord_To_Pixel(COORDINATE coord, int & x, int & y) const;
-		void Pixel_To_Zoom(int& x, int& y) const;
 		bool Push_Onto_TacMap(COORDINATE &source, COORDINATE &dest);
 		void Remove(ObjectClass const * object, LayerType layer);
 		void Submit(ObjectClass const * object, LayerType layer);
@@ -230,6 +206,7 @@ class DisplayClass: public MapClass
 		*/
 		virtual void Code_Pointers(void);
 		virtual void Decode_Pointers(void);
+
 	protected:
 		virtual void Mouse_Right_Press(void);
 		virtual void Mouse_Left_Press(int x, int y);
@@ -247,7 +224,7 @@ class DisplayClass: public MapClass
 		/*
 		**	This is the coordinate that the tactical map should be in at next available opportunity.
 		*/
-		DisplayTacticalCoord DesiredTacticalCoord;
+		COORDINATE DesiredTacticalCoord;
 
 		/*
 		**	If something in the tactical map is to be redrawn, this flag is set to true.
@@ -276,9 +253,6 @@ class DisplayClass: public MapClass
 		SpecialWeaponType IsTargettingMode;
 
 	protected:
-		void CacheVisibleCells(void);
-		CellCache_t* cellDisplayCache; // Potential Visible Cells.
-		int numCachedDisplayCells;
 
 		/*
 		**	If it is currently in rubber band mode (multi unit selection), then this
@@ -335,7 +309,7 @@ public:		//ST - 1/21/2019 11:59AM
 		int BandX,BandY;
 		int NewX,NewY;
 
-		static Image_t *ShadowShapes;
+		static void const *ShadowShapes;
 		static unsigned char ShadowTrans[(SHADOW_COL_COUNT+1)*256];
 
 		void Redraw_Icons(void);
@@ -361,9 +335,7 @@ public:		//ST - 1/21/2019 11:59AM
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
 		unsigned char SaveLoadPadding[1024];
-public:
-		// Stored visible cells for fast lookup.
-		static CellDisplayCache_t visibleCellTable[MAP_CELL_W][MAP_CELL_H];
+
 };
 
 

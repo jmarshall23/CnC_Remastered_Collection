@@ -130,9 +130,43 @@ typedef enum MenuIndexType {
 #define	DKGRAY	GREY
 #define	LTGRAY	LTGREY
 
-int Get_IconSet_MapWidth(void const* data);
-int Get_IconSet_MapHeight(void const* data);
 
+class IconsetClass;
+#ifndef WIN32
+typedef struct {
+	short	Width;			// Width of icons (pixels).
+	short	Height;			// Height of icons (pixels).
+	short	Count;			// Number of (logical) icons in this set.
+	short	Allocated;		// Was this iconset allocated?
+	short MapWidth;		// Width of map (in icons).
+	short MapHeight;		// Height of map (in icons).
+	long	Size;				// Size of entire iconset memory block.
+	long	Icons;			// Offset from buffer start to icon data.
+//	unsigned char * Icons;	// Offset from buffer start to icon data.
+	long	Palettes;		// Offset from buffer start to palette data.
+	long	Remaps;			// Offset from buffer start to remap index data.
+	long	TransFlag;		// Offset for transparency flag table.
+	long	ColorMap;		// Offset for color control value table.
+	long	Map;				// Icon map offset (if present).
+//	unsigned char * Map;				// Icon map offset (if present).
+} IControl_Type;
+#endif
+
+inline int Get_IconSet_MapWidth(void const * data)
+{
+	if (data) {
+		return(((IControl_Type *)data)->MapWidth);
+	}
+	return(0);
+}
+
+inline int Get_IconSet_MapHeight(void const * data)
+{
+	if (data) {
+		return(((IControl_Type *)data)->MapHeight);
+	}
+	return(0);
+}
 
 inline unsigned char const * Get_IconSet_ControlMap(void const * data)
 {
@@ -141,5 +175,40 @@ inline unsigned char const * Get_IconSet_ControlMap(void const * data)
 	}
 	return(0);
 }
+
+class IconsetClass : protected IControl_Type
+{
+	public:
+		/*
+		**	Query functions.
+		*/
+		int Map_Width(void) const {return(MapWidth);};
+		int Map_Height(void) const {return(MapHeight);};
+		unsigned char * Control_Map(void) {return((unsigned char *)this + ColorMap);};
+		unsigned char const * Control_Map(void) const {return((unsigned char const *)this + ColorMap);};
+		int Icon_Count(void) const {return(Count);};
+		int Pixel_Width(void) const {return(Width);};
+		int Pixel_Height(void) const {return(Height);};
+		int Total_Size(void) const {return(Size);};
+		unsigned char const * Palette_Data(void) const {return((unsigned char const *)this + Palettes);};
+		unsigned char * Palette_Data(void) {return((unsigned char *)this + Palettes);};
+		unsigned char const * Icon_Data(void) const {return((unsigned char const *)this + Icons);};
+		unsigned char * Icon_Data(void) {return((unsigned char *)this + Icons);};
+		unsigned char const * Map_Data(void) const {return((unsigned char const *)this + Map);};
+		unsigned char * Map_Data(void) {return((unsigned char *)this + Map);};
+		unsigned char const * Remap_Data(void) const {return((unsigned char const *)this + Remaps);};
+		unsigned char * Remap_Data(void) {return((unsigned char *)this + Remaps);};
+		unsigned char const * Trans_Data(void) const {return((unsigned char const *)this + TransFlag);};
+		unsigned char * Trans_Data(void) {return((unsigned char *)this + TransFlag);};
+
+	/*
+	**	Disallow these operations with an IconsetClass object.
+	*/
+	private:
+		IconsetClass & operator = (IconsetClass const &);
+		IconsetClass(void);
+		static void * operator new(size_t);
+};
+
 
 #endif

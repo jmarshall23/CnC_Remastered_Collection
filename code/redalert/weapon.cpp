@@ -211,7 +211,6 @@ bool WeaponTypeClass::Read_INI(CCINIClass & ini)
 		Anim = ini.Get_AnimType(Name(), "Anim", Anim);
 		IsCamera = ini.Get_Bool(Name(), "Camera", IsCamera);
 		IsElectric = ini.Get_Bool(Name(), "Charges", IsElectric);
-		Prism = ini.Get_Bool(Name(), "Prism", 0);
 		IsTurboBoosted = ini.Get_Bool(Name(), "TurboBoost", IsTurboBoosted);
 
 		WarheadType wtype = (WarheadPtr != NULL) ? WarheadType(WarheadPtr->ID) : WARHEAD_NONE;

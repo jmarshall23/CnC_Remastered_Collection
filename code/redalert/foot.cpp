@@ -1921,7 +1921,8 @@ void FootClass::Death_Announcement(TechnoClass const * ) const
 {
 	assert(IsActive);
 
-	if (IsOwnedByPlayer) {	
+	//if (IsOwnedByPlayer) {
+	if ((Session.Type == GAME_GLYPHX_MULTIPLAYER && House->IsHuman) || (Session.Type != GAME_GLYPHX_MULTIPLAYER && IsOwnedByPlayer)) {
 		if (What_Am_I() == RTTI_VESSEL) {
 			// Speak(VOX_SHIP_LOST); // MBL 02.06.2020
 			Speak(VOX_SHIP_LOST, House, Center_Coord());

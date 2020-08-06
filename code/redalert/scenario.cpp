@@ -64,8 +64,6 @@
 #include "tcpip.h"
 #include "ccdde.h"
 #include "audiomix.h"
-#include "image.h"
-#include "bigoverlay.h"
 
 extern bool SpawnedFromWChat;
 #endif
@@ -402,9 +400,28 @@ bool Start_Scenario(char * name, bool briefing)
 	/*
 	** If there's no briefing movie, restate the mission at the beginning.
 	*/
-	if (!Debug_SkipBriefing && Session.Type != GAME_SKIRMISH)
+	if (!Debug_SkipBriefing)
 	{
-		RenderBriefing();
+		char buffer[25];
+		if (Scen.BriefMovie != VQ_NONE) {
+			sprintf(buffer, "%s.VQA", VQName[Scen.BriefMovie]);
+		}
+		if (Session.Type == GAME_NORMAL && (Scen.BriefMovie == VQ_NONE || !CCFileClass(buffer).Is_Available())) {
+			/*
+			** Make sure the mouse is visible before showing the restatement.
+			*/
+			while (Get_Mouse_State()) {
+				Show_Mouse();
+			}
+			Restate_Mission(Scen.ScenarioName, TXT_OK, TXT_NONE);
+		}
+
+		if (briefing) {
+			Hide_Mouse();
+			VisiblePage.Clear();
+			Show_Mouse();
+			Play_Movie(Scen.ActionMovie, Scen.TransitTheme);
+		}
 	}	
 
 	if (Scen.TransitTheme == THEME_NONE) {
@@ -802,8 +819,6 @@ void Post_Load_Game(int load_multi)
 void Clear_Scenario(void)
 {
 // TCTCTC -- possibly just use in-place new of scenario object?
-
-	lightManager.FreeAllLights();
 
 	Scen.MissionTimer = 0;
 	Scen.MissionTimer.Stop();
@@ -1968,7 +1983,7 @@ void ScenarioClass::Set_Scenario_Name(int scenario, ScenarioPlayerType player, S
 		** Find which variations are available for this scenario
 		*/
 		for (i = SCEN_VAR_FIRST; i < SCEN_VAR_COUNT; i++) {
-			sprintf(fname, "SC%c%02d%c%c.MAP", c_player, scenario, c_dir, 'A' + i);
+			sprintf(fname, "SC%c%02d%c%c.INI", c_player, scenario, c_dir, 'A' + i);
 			if (!CCFileClass(fname).Is_Available()) {
 				break;
 			}
@@ -2011,7 +2026,7 @@ void ScenarioClass::Set_Scenario_Name(int scenario, ScenarioPlayerType player, S
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 //Mono_Printf("In set_scenario_name, scenario # = %d\n",scenario);Keyboard->Get();Keyboard->Get();
 	if (scenario < 100) {
-		sprintf(ScenarioName, "SC%c%02d%c%c.MAP", c_player, scenario, c_dir, c_var);
+		sprintf(ScenarioName, "SC%c%02d%c%c.INI", c_player, scenario, c_dir, c_var);
 	} else {
 		char first = (scenario / 36) + 'A';
 		char second = scenario % 36;
@@ -2022,10 +2037,10 @@ void ScenarioClass::Set_Scenario_Name(int scenario, ScenarioPlayerType player, S
 			second = (second - 10) + 'A';
 		}
 
-		sprintf(ScenarioName, "SC%c%c%c%c%c.MAP", c_player, first, second, c_dir, c_var);
+		sprintf(ScenarioName, "SC%c%c%c%c%c.INI", c_player, first, second, c_dir, c_var);
 	}
 #else
-	sprintf(ScenarioName, "SC%c%02d%c%c.MAP", c_player, scenario, c_dir, c_var);
+	sprintf(ScenarioName, "SC%c%02d%c%c.INI", c_player, scenario, c_dir, c_var);
 #endif
 }
 
@@ -2094,8 +2109,126 @@ bool Read_Scenario_INI(char * fname, bool )
 	ScenarioInit++;
 
 	Clear_Scenario();
-	
+#ifdef OBSOLETE
+	/*
+	** If we are not dealing with scenario 1, or a multi player scenario
+	** then make sure the correct disk is in the drive.
+	*/
+	if (RequiredCD != -2) {
+		RequiredCD = -1;
+	}
+#endif
+
+	/*
+	** Only force a CD check if this is a single player game or if its
+	** a multiplayer game on an official scenario. If its non-official
+	** (a user scenario) then we dont care which CD is in because the
+	** scenario is stored locally on the hard drive. In this case, we
+	** have already verified its existance. ST 3/1/97 4:52PM.
+	*/
+#ifdef FIXIT_VERSION_3		//	Avoid CD check if official scenario was downloaded.
+	if( ( Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial ) && _stricmp( Scen.ScenarioName, "download.tmp" ) ){
+#else
+	if (Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial){
+#endif
+
+		/*
+		** If this is scenario 1 then it should be on all CDs unless its an ant scenario
+		*/
+		if (Scen.Scenario == 1 && Scen.ScenarioName[2] != 'A') {
+	   	RequiredCD = -1;
+		} else {
+//			Mono_Printf("Read_SCen_INI scenario is: %s\n", Scen.ScenarioName);
+			/*
+			** If this is a multiplayer scenario we need to find out if its a counterstrike
+			** scenario. If so then we need CD 2. The original multiplayer scenarios are on
+			** all CDs.
+			*/
+			if (Session.Type != GAME_NORMAL) {
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+				RequiredCD = -1;	// default that any CD will do.
+// If it's a counterstrike mission, require the counterstrike CD, unless the
+// Aftermath CD is already in the drive, in which case, leave it there.
+// Note, this works because this section only tests for multiplayer scenarios.
+				if (Is_Mission_Counterstrike(Scen.ScenarioName)) {
+					RequiredCD = 2;
+					if( Is_Aftermath_Installed() || Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) == 3 )
+					{
+						RequiredCD = 3;
+					}
+				}
+				if(Is_Mission_Aftermath(Scen.ScenarioName)) {
+					RequiredCD = 3;
+				}
+#else
+				if (Scen.Scenario > 24) {
+					RequiredCD = 2;
+				} else {
+					RequiredCD = -1;
+				}
+#endif
+			} else {
+
+				/*
+				** This is a solo game. If the scenario number is >= 20 or its an ant mission
+				** then we need the counterstrike CD (2)
+				*/
+     			if (Scen.Scenario >= 20 || Scen.ScenarioName[2] == 'A') {
+					RequiredCD = 2;
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+     				if (Scen.Scenario >= 36 && Scen.ScenarioName[2] != 'A') {
+						RequiredCD = 3;
+#ifdef BOGUSCD
 	RequiredCD = -1;
+#endif
+					}
+#endif
+				} else {
+
+					/*
+					** This is a solo mission from the original Red Alert. Choose the Soviet or
+					** allied CD depending on the scenario name.
+					*/
+					if (Scen.ScenarioName[2] == 'U') {
+						RequiredCD = 1;
+					} else {
+						if (Scen.ScenarioName[2] == 'G') {
+//							Mono_Printf("We are setting REquiredCD to 0");
+							RequiredCD = 0;
+
+						}
+					}
+     			}
+			}
+		}
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+// If we're asking for a CD swap, check to see if we need to set the palette
+// to avoid a black screen.  If this is a normal RA game, and the CD being
+// requested is an RA CD, then don't set the palette, leave the map screen up.
+
+#ifdef FIXIT_VERSION_3
+		int cd_index = Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60);
+		if( !( Using_DVD() && cd_index == 5 ) && cd_index != RequiredCD ) {
+#else
+		if (Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) != RequiredCD) {
+#endif
+			if ((RequiredCD == 0 || RequiredCD == 1) && Session.Type == GAME_NORMAL) {
+				SeenPage.Clear();
+			}
+			GamePalette.Set(FADE_PALETTE_FAST, Call_Back);
+		}
+#endif
+		if (!Force_CD_Available(RequiredCD)) {
+			Prog_End("Read_Scenario_INI Force_CD_Available failed", true);
+			Emergency_Exit(EXIT_FAILURE);
+     	}
+	} else {
+		/*
+		** This is a user scenario so any old CD will do.
+		*/
+		RequiredCD = -1;
+	}
+
 
 	/*
 	**	Create scenario filename and read the file.
@@ -2274,8 +2407,6 @@ bool Read_Scenario_INI(char * fname, bool )
 	Scen.IsMoneyTiberium = ini.Get_Bool(BASIC, "FillSilos", Scen.IsMoneyTiberium);
 	Scen.Percent = ini.Get_Int(BASIC, "Percent", Scen.Percent);
 
-	lightManager.Read_Scenerio_Lights(&ini);
-
 	/*
 	**	Read in the specific information for each of the house types.  This creates
 	**	the houses of different types.
@@ -2304,8 +2435,6 @@ bool Read_Scenario_INI(char * fname, bool )
 	*/
 	Map.Read_INI(ini);
 	Call_Back();
-
-	bigOverlayManager.Read_Scenerio(&ini);
 
 	/*
 	**	Assign PlayerPtr by reading the player's house from the INI;
@@ -2651,8 +2780,6 @@ void Write_Scenario_INI(char * fname)
 	ini.Put_Bool(BASIC, "TruckCrate", Scen.IsTruckCrate);
 	ini.Put_Int(BASIC, "Percent", Scen.Percent);
 
-	lightManager.Write_Scenerio_Lights(&ini);
-	bigOverlayManager.Write_Scenerio(&ini);
 	HouseClass::Write_INI(ini);
 	TeamTypeClass::Write_INI(ini);
 	TriggerTypeClass::Write_INI(ini);
@@ -3657,7 +3784,7 @@ void Disect_Scenario_Name(char const * name, int & scenario, ScenarioPlayerType 
 	/*
 	**	Fetch the scenario player (side).
 	*/
-	player = SCEN_PLAYER_MPLAYER;
+	player = SCEN_PLAYER_GREECE;
 	if (name[2] == HouseTypeClass::As_Reference(HOUSE_SPAIN).Prefix) {
 		player = SCEN_PLAYER_SPAIN;
 	}

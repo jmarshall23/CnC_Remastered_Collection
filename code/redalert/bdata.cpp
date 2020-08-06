@@ -568,36 +568,6 @@ static BuildingTypeClass const ClassTesla(
 	(short const *)OList12		// OVERLAPLIST:List of overlap cell offset.
 );
 
-static BuildingTypeClass const ClassPrisom(
-	STRUCT_PRISOM,
-	TXT_TESLA,						// NAME:			Short name of the structure.
-	"GGPRIS",							// NAME:			Short name of the structure.
-	FACING_S,						// Foundation direction from center of building.
-	XYP_COORD(0, 0),				// Exit point for produced units.
-	REMAP_ALTERNATE,				// Sidebar remap logic.
-	0x00C8,							//	Vertical offset.
-	0x0000,							// Primary weapon offset along turret centerline.
-	0x0000,							// Primary weapon lateral offset along turret centerline.
-	false,						// Is this building a fake (decoy?)
-	false,						// Animation rate is regulated for constant speed?
-	false,						// Always use the given name for the building?
-	false,						// Is this a wall type structure?
-	false,						// Simple (one frame) damage imagery?
-	false,						// Is it invisible to radar?
-	true,							// Can the player select this?
-	true,							// Is this a legal target for attack or move?
-	false,						// Is this an insignificant building?
-	false,						// Theater specific graphic image?
-	false,						// Does it have a rotating turret?
-	true,							// Can the building be color remapped to indicate owner?
-	RTTI_NONE,						// The object type produced at this factory.
-	DIR_N,							// Starting idle frame to match construction.
-	BSIZE_12, 						// SIZE:			Building size.
-	NULL,								// Preferred exit cell list.
-	(short const*)List12,		// OCCUPYLIST:	List of active foundation squares.
-	(short const*)OList12		// OVERLAPLIST:List of overlap cell offset.
-);
-
 static BuildingTypeClass const ClassTurret(
 	STRUCT_TURRET,
 	TXT_TURRET,						// NAME:			Short name of the structure.
@@ -691,7 +661,7 @@ static BuildingTypeClass const ClassFlameTurret(
 static BuildingTypeClass const ClassConst(
 	STRUCT_CONST,
 	TXT_CONST_YARD,				// NAME:			Short name of the structure.
-	"EGCNST",							// NAME:			Short name of the structure.
+	"FACT",							// NAME:			Short name of the structure.
 	FACING_NONE,					// Foundation direction from center of building.
 	XYP_COORD(0,0),				// Exit point for produced units.
 	REMAP_ALTERNATE,				// Sidebar remap logic.
@@ -2488,99 +2458,6 @@ static BuildingTypeClass const ClassV37(
 	(short const *)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
 	(short const *)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
 );
-
-static BuildingTypeClass const ClassAban01(
-	STRUCT_ABAN01,
-	TXT_CIV37,						// NAME:			Short name of the structure.
-	"ABAN01",						// NAME:			Short name of the structure.
-	FACING_NONE,					// Foundation direction from center of building.
-	XYP_COORD(0, 0),				// Exit point for produced units.
-	REMAP_ALTERNATE,				// Sidebar remap logic.
-	0x0000,							//	Vertical offset.
-	0x0000,							// Primary weapon offset along turret centerline.
-	0x0000,							// Primary weapon lateral offset along turret centerline.
-	false,						// Is this building a fake (decoy?)
-	true,							// Animation rate is regulated for constant speed?
-	true,							// Always use the given name for the building?
-	false,						// Is this a wall type structure?
-	true,							// Simple (one frame) damage imagery?
-	false,						// Is it invisible to radar?
-	true,							// Can the player select this?
-	true,							// Is this a legal target for attack or move?
-	false,						// Is this an insignificant building?
-	false,							// Theater specific graphic image?
-	false,						// Does it have a rotating turret?
-	false,						// Can the building be color remapped to indicate owner?
-	RTTI_NONE,						// The object type produced at this factory.
-	DIR_N,							// Starting idle frame to match construction.
-	BSIZE_42, 						// SIZE:			Building size.
-	NULL,								// Preferred exit cell list.
-	(short const*)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
-	(short const*)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
-);
-
-static BuildingTypeClass const ClassAban02(
-	STRUCT_ABAN02,
-	TXT_CIV37,						// NAME:			Short name of the structure.
-	"ABAN02",						// NAME:			Short name of the structure.
-	FACING_NONE,					// Foundation direction from center of building.
-	XYP_COORD(0, 0),				// Exit point for produced units.
-	REMAP_ALTERNATE,				// Sidebar remap logic.
-	0x0000,							//	Vertical offset.
-	0x0000,							// Primary weapon offset along turret centerline.
-	0x0000,							// Primary weapon lateral offset along turret centerline.
-	false,						// Is this building a fake (decoy?)
-	true,							// Animation rate is regulated for constant speed?
-	true,							// Always use the given name for the building?
-	false,						// Is this a wall type structure?
-	true,							// Simple (one frame) damage imagery?
-	false,						// Is it invisible to radar?
-	true,							// Can the player select this?
-	true,							// Is this a legal target for attack or move?
-	false,						// Is this an insignificant building?
-	false,							// Theater specific graphic image?
-	false,						// Does it have a rotating turret?
-	false,						// Can the building be color remapped to indicate owner?
-	RTTI_NONE,						// The object type produced at this factory.
-	DIR_N,							// Starting idle frame to match construction.
-	BSIZE_42, 						// SIZE:			Building size.
-	NULL,								// Preferred exit cell list.
-	(short const*)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
-	(short const*)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
-);
-
-
-static BuildingTypeClass const ClassAban03(
-	STRUCT_ABAN03,
-	TXT_CIV37,						// NAME:			Short name of the structure.
-	"ABAN03",						// NAME:			Short name of the structure.
-	FACING_NONE,					// Foundation direction from center of building.
-	XYP_COORD(0, 0),				// Exit point for produced units.
-	REMAP_ALTERNATE,				// Sidebar remap logic.
-	0x0000,							//	Vertical offset.
-	0x0000,							// Primary weapon offset along turret centerline.
-	0x0000,							// Primary weapon lateral offset along turret centerline.
-	false,						// Is this building a fake (decoy?)
-	true,							// Animation rate is regulated for constant speed?
-	true,							// Always use the given name for the building?
-	false,						// Is this a wall type structure?
-	true,							// Simple (one frame) damage imagery?
-	false,						// Is it invisible to radar?
-	true,							// Can the player select this?
-	true,							// Is this a legal target for attack or move?
-	false,						// Is this an insignificant building?
-	false,							// Theater specific graphic image?
-	false,						// Does it have a rotating turret?
-	false,						// Can the building be color remapped to indicate owner?
-	RTTI_NONE,						// The object type produced at this factory.
-	DIR_N,							// Starting idle frame to match construction.
-	BSIZE_42, 						// SIZE:			Building size.
-	NULL,								// Preferred exit cell list.
-	(short const*)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
-	(short const*)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
-);
-
-
 static BuildingTypeClass const ClassMission(
 	STRUCT_MISSION,
 	TXT_CIVMISS,					// NAME:			Short name of the structure.
@@ -2975,10 +2852,6 @@ BuildingTypeClass::BuildingTypeClass(
 	BuildupData(0)
 {
 
-	memset(CustomTheatrePalette, 0, sizeof(CustomTheatrePalette));
-	IdleAnimShape = NULL;
-	ActiveAnimAnimShape = NULL;
-
 	Anims[BSTATE_CONSTRUCTION].Start = 0;
 	Anims[BSTATE_CONSTRUCTION].Count = 1;
 	Anims[BSTATE_CONSTRUCTION].Rate = 0;
@@ -3151,9 +3024,6 @@ void BuildingTypeClass::Init_Heap(void)
 	new BuildingTypeClass(ClassBarrel);			// STRUCT_BARREL
 	new BuildingTypeClass(ClassBarrel3);		// STRUCT_BARREL3
 
-	new BuildingTypeClass(ClassAban01);
-	new BuildingTypeClass(ClassAban02);
-	new BuildingTypeClass(ClassAban03);
 #ifdef FIXIT_ANTS
 	new BuildingTypeClass(ClassQueen);			// STRUCT_QUEEN
 	new BuildingTypeClass(ClassLarva1);			// STRUCT_LARVA1
@@ -3163,23 +3033,20 @@ void BuildingTypeClass::Init_Heap(void)
 #ifdef RA_AF
 	new BuildingTypeClass(ClassAFV01);			// STRUCT_AFV01
 #endif
-
-	new BuildingTypeClass(ClassPrisom);
 }
 
-Image_t* BuildingTypeClass::LoadHDImage(const char* fullname, int& numHDShapes, bool remapHouse) {
+Image_t* BuildingTypeClass::LoadHDImage(const char* fullname, int& numHDShapes) {
 	const char* imageFileName = Buildings_FindHDTexture(fullname, 0, 0);
 	Image_t* image = NULL;
 	
 	numHDShapes = -1;
 
 	if (imageFileName) {
-		image = Image_LoadImage(imageFileName, remapHouse, remapHouse);
+		image = Image_LoadImage(imageFileName, true, true);
 		int numBuildingAnims = Buildings_GetNumFramesForTile(fullname, 0);
 		int shapeId = 1;
 
 		// Load the old school animation pipeline.
-		if(remapHouse)
 		{
 			while (true) {
 				imageFileName = Buildings_FindHDTexture(fullname, shapeId, 0);
@@ -3196,15 +3063,9 @@ Image_t* BuildingTypeClass::LoadHDImage(const char* fullname, int& numHDShapes, 
 		if (numBuildingAnims > 0)
 		{
 			for (int i = 1; i < numBuildingAnims; i++) {
-				if(!remapHouse) {
-					imageFileName = Buildings_FindHDTexture(fullname, 0, i);
-					Image_Add32BitImage(imageFileName, image, -1, i, 0);
-				}
-				else {
-					imageFileName = Buildings_FindHDTexture(fullname, 0, i);
-					for (int d = 0; d < MAX_MPLAYER_COLORS; d++) {
-						Image_Add32BitImage(imageFileName, image, d, i, 0);
-					}
+				imageFileName = Buildings_FindHDTexture(fullname, 0, i);
+				for (int d = 0; d < MAX_MPLAYER_COLORS; d++) {
+					Image_Add32BitImage(imageFileName, image, d, 0, i);
 				}
 			}
 		}
@@ -3288,13 +3149,15 @@ void BuildingTypeClass::One_Time(void)
 		**	Fetch the sidebar cameo image for this building.
 		*/
 		if (building.Level != -1) {
+//		if (building.IsBuildable) {
 			sprintf(buffer, "%sICON", building.Graphic_Name());
 
 			if (building.IsFake) {
 				buffer[3] = 'F';
 			}
 
-			((Image_t*&)building.CameoData) = LoadCameoImage(buffer);
+			_makepath(fullname, NULL, NULL, buffer, ".SHP");
+			((void const *&)building.CameoData) = MFCD::Retrieve(fullname);
 		}
 
 		/*
@@ -3304,31 +3167,13 @@ void BuildingTypeClass::One_Time(void)
 		_makepath(fullname, NULL, NULL, buffer, ".SHP");
 		void const * dataptr;
 		dataptr = MFCD::Retrieve(fullname);
-		if(dataptr == NULL) {
-			sprintf(buffer, "%sMK", building.Graphic_Name());
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
-			dataptr = MFCD::Retrieve(fullname);
-		}
-
 		((void const *&)building.BuildupData) = dataptr;
 		if (dataptr != NULL) {
 			int timedelay = 1;
 			int count = Get_Build_Frame_Count(dataptr);
 			if (count > 0) {
 				timedelay = (Rule.BuildupTime * TICKS_PER_MINUTE) / count;
-// jmarshall - fix for too many build frames causeing the map animation not to play.
-				if(timedelay == 0) {
-					timedelay = 1;
-				}
-// jmarshall end
 			}
-
-// jmarshall - td build sequences, don't go through the shadow frames.
-			if(Get_Build_TS_Shape(dataptr)) {
-				count = count / 2;
-			}
-// jmarshall end
-
 			building.Init_Anim(BSTATE_CONSTRUCTION, 0, count, timedelay);
 		}
 
@@ -3339,18 +3184,18 @@ void BuildingTypeClass::One_Time(void)
 		*/
 		_makepath(fullname, NULL, NULL, building.Graphic_Name(), ".SHP");
 		((void const *&)building.ImageData) = MFCD::Retrieve(fullname);
-		((void const*&)building.HDImageData) = LoadHDImage(fullname, numhdimages, building.IsRemappable);
+		((void const*&)building.HDImageData) = LoadHDImage(fullname, numhdimages);
 
-		//if (building.ImageData != NULL && building.HDImageData != NULL) {
-		//	int width = Get_Build_Frame_Width(building.ImageData);
-		//	int height = Get_Build_Frame_Height(building.ImageData);
-		//
-		//	for (int d = 0; d < numhdimages; d++)
-		//	{
-		//		building.HDImageData->renderwidth[d] = width;
-		//		building.HDImageData->renderheight[d] = height;
-		//	}
-		//}
+		if (building.ImageData != NULL && building.HDImageData != NULL) {
+			int width = Get_Build_Frame_Width(building.ImageData);
+			int height = Get_Build_Frame_Height(building.ImageData);
+
+			for (int d = 0; d < numhdimages; d++)
+			{
+				building.HDImageData->renderwidth[d] = width;
+				building.HDImageData->renderheight[d] = height;
+			}
+		}
 	}
 
 	int specialNumHDImages = 0;
@@ -3359,10 +3204,10 @@ void BuildingTypeClass::One_Time(void)
 	char fullname[_MAX_FNAME+_MAX_EXT];
 	_makepath(fullname, NULL, NULL, (char const *)"WEAP2",".SHP");
 	WarFactoryOverlay = MFCD::Retrieve(fullname);
-	WarFactoryHDOverlay = LoadHDImage(fullname, specialNumHDImages, false);
+	WarFactoryHDOverlay = LoadHDImage(fullname, specialNumHDImages);
 	if (WarFactoryOverlay != NULL && WarFactoryHDOverlay != NULL) {
-		int width = Get_Build_Frame_Width(WarFactoryOverlay, 0);
-		int height = Get_Build_Frame_Height(WarFactoryOverlay, 0);
+		int width = Get_Build_Frame_Width(WarFactoryOverlay);
+		int height = Get_Build_Frame_Height(WarFactoryOverlay);
 
 		for (int d = 0; d < specialNumHDImages; d++)
 		{
@@ -3446,7 +3291,12 @@ void BuildingTypeClass::Display(int x, int y, WindowNumberType window, HousesTyp
 		GL_RenderImage(hdimage, x, y, hdimage->renderwidth[0], hdimage->renderheight[0]);
 	}
 	else {
-		CC_DrawHD_Shape(Get_Cameo_Data(), 0, x, y, window, SHAPE_CENTER | SHAPE_WIN_REL);
+		void const* ptr = Get_Cameo_Data();
+		if (ptr == NULL) {
+			IsTheaterShape = IsTheater;
+			ptr = Get_Image_Data();
+		}
+		CC_Draw_Shape(ptr, 0, x, y, window, SHAPE_CENTER | SHAPE_WIN_REL);
 		IsTheaterShape = false;
 	}
 // jmarshall end
@@ -3632,8 +3482,8 @@ void BuildingTypeClass::Init(TheaterType theater)
 					}
 
 					if (classptr->ImageData != NULL && classptr->HDImageData != NULL) {
-						int width = Get_Build_Frame_Width(classptr->ImageData, 0);
-						int height = Get_Build_Frame_Height(classptr->ImageData, 0);
+						int width = Get_Build_Frame_Width(classptr->ImageData);
+						int height = Get_Build_Frame_Height(classptr->ImageData);
 
 						classptr->HDImageData->renderwidth[0] = width;
 						classptr->HDImageData->renderheight[0] = height;
@@ -3810,7 +3660,18 @@ short const * BuildingTypeClass::Overlap_List(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Width(void) const
 {
-	return (Get_Build_Frame_Width(Get_Image_Data(), 0) / ICON_PIXEL_W) + 1;
+	static int width[BSIZE_COUNT] = {
+		1,
+		2,
+		1,
+		2,
+		2,
+		3,
+		3,
+		4,
+		5
+	};
+	return(width[Size]);
 }
 
 
@@ -3830,7 +3691,18 @@ int BuildingTypeClass::Width(void) const
  *=============================================================================================*/
 int BuildingTypeClass::Height(bool bib) const
 {
-	return (Get_Build_Frame_Height(Get_Image_Data(), 0) / ICON_PIXEL_H) + 1;
+	static int height[BSIZE_COUNT] = {
+		1,
+		1,
+		2,
+		2,
+		3,
+		2,
+		3,
+		2,
+		5
+	};
+	return(height[Size] + ((bib && IsBibbed) ? 1 : 0));
 }
 
 
@@ -4025,10 +3897,6 @@ bool BuildingTypeClass::Flush_For_Placement(CELL cell, HouseClass * house)  cons
  *=============================================================================================*/
 bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 {
-	char customPalName[512];
-	char idleAnimName[512];
-	char ConstructAnimName[512];
-
 	if (TechnoTypeClass::Read_INI(ini)) {
 		Speed = ini.Get_Bool(Name(), "WaterBound", (Speed == SPEED_FLOAT)) ? SPEED_FLOAT : SPEED_NONE;
 		Capacity = ini.Get_Int(Name(), "Storage", Capacity);
@@ -4038,35 +3906,7 @@ bool BuildingTypeClass::Read_INI(CCINIClass & ini)
 		IsBibbed = ini.Get_Bool(Name(), "Bib", IsBibbed);
 		IsUnsellable = ini.Get_Bool(Name(), "Unsellable", IsUnsellable);
 		IsBase = ini.Get_Bool(Name(), "BaseNormal", IsBase);
-		Power = ini.Get_Int(Name(), "Power", (Power > 0) ? Power : -Drain);		
-		
-		if(ini.Get_String(Name(), "Snow", "", &customPalName[0], sizeof(customPalName)) > 0) {
-			CustomTheatrePalette[THEATER_SNOW] = MFCD::Retrieve(customPalName);
-		}
-		if (ini.Get_String(Name(), "Temperate", "", &customPalName[0], sizeof(customPalName)) > 0) {
-			CustomTheatrePalette[THEATER_TEMPERATE] = MFCD::Retrieve(customPalName);
-		}
-
-		if (ini.Get_String(Name(), "IdleAnim", "", &idleAnimName[0], sizeof(idleAnimName)) > 0) {
-			IdleAnimShape = MFCD::Retrieve(idleAnimName);
-		}
-
-		if (ini.Get_String(Name(), "ActiveAnim", "", &ConstructAnimName[0], sizeof(ConstructAnimName)) > 0) {
-			ActiveAnimAnimShape = MFCD::Retrieve(ConstructAnimName);
-		}
-
-		RenderOffsetY = ini.Get_Int(Name(), "RenderOffsetY", 0);
-		IdleAnimIgnorePowerState = ini.Get_Int(Name(), "IdleAnimIgnorePowerState", 0);
-		IdleHasShadowFrames = ini.Get_Int(Name(), "IdleHasShadowFrames", 0);
-		IdleAnimNonDamagedStart = ini.Get_Int(Name(), "IdleAnimNonDamagedStart", -1);
-		IdleAnimNonDamagedFrames = ini.Get_Int(Name(), "IdleAnimNonDamagedFrames", -1);
-		IdleAnimDamagedStart = ini.Get_Int(Name(), "IdleAnimDamagedStart", -1);
-		IdleAnimDamagedFrames = ini.Get_Int(Name(), "IdleAnimDamagedFrames", -1);
-		ActiveAnimNonDamagedStart = ini.Get_Int(Name(), "ActiveAnimNonDamagedStart", -1);
-		ActiveAnimNonDamagedFrames = ini.Get_Int(Name(), "ActiveAnimNonDamagedFrames", -1);
-		ActiveAnimDamagedStart = ini.Get_Int(Name(), "ActiveAnimDamagedStart", -1);
-		ActiveAnimDamagedFrames = ini.Get_Int(Name(), "ActiveAnimDamagedFrames", -1);
-
+		Power = ini.Get_Int(Name(), "Power", (Power > 0) ? Power : -Drain);
 		if (Power < 0) {
 			Drain = -Power;
 			Power = 0;

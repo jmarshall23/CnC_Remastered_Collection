@@ -273,7 +273,7 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 
 				case ANIM_FLAG:
 					x += (ICON_PIXEL_W / 2) - 2;
-					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile, shapenum);
+					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
 					transtable = Map.UnitShadow;
 					alt = true;
 					break;

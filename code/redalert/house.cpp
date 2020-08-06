@@ -525,7 +525,6 @@ HouseClass::HouseClass(HousesType house) :
 	RepairDelay(0),
 	BuildDelay(0),
 	ActLike(Class->House),
-	fireSaleAvailable(false),
 	IsHuman(false),
 	WasHuman(false),
 	IsPlayerControl(false),
@@ -1108,10 +1107,6 @@ void HouseClass::AI(void)
 				}
 				if (BQuantity[STRUCT_TESLA] > 0) {
 					text = Text_String(TXT_POWER_TESLA);
-					text_id = TXT_POWER_TESLA;
-				}
-				if (BQuantity[STRUCT_PRISOM] > 0) {
-					text = "Prism towers offline";
 					text_id = TXT_POWER_TESLA;
 				}
 				if (text == NULL) {
@@ -5498,8 +5493,7 @@ bool HouseClass::AI_Raise_Power(UrgencyType urgency) const
 		{STRUCT_IRON_CURTAIN, URGENCY_MEDIUM},
 		{STRUCT_RADAR, URGENCY_MEDIUM},
 		{STRUCT_REPAIR, URGENCY_MEDIUM},
-		{STRUCT_TESLA, URGENCY_HIGH},
-		{STRUCT_PRISOM, URGENCY_HIGH}
+		{STRUCT_TESLA, URGENCY_HIGH}
 	};
 
 	/*
@@ -5561,8 +5555,7 @@ bool HouseClass::AI_Raise_Money(UrgencyType urgency) const
 //		{STRUCT_WEAP,URGENCY_HIGH},
 //		{STRUCT_BARRACKS,URGENCY_HIGH},
 //		{STRUCT_TENT,URGENCY_HIGH},
-		{STRUCT_CONST,URGENCY_CRITICAL},
-		{STRUCT_PRISOM,URGENCY_MEDIUM},
+		{STRUCT_CONST,URGENCY_CRITICAL}
 	};
 	BuildingClass * b = 0;
 
@@ -5864,16 +5857,6 @@ int HouseClass::AI_Building(void)
 			}
 		}
 
-		if (BQuantity[STRUCT_RADAR] == 0) {
-			b = &BuildingTypeClass::As_Reference(STRUCT_RADAR);
-			if (Can_Build(b, ActLike) && (b->Cost_Of() < money || hasincome)) {
-				choiceptr = BuildChoice.Alloc();
-				if (choiceptr != NULL) {
-					*choiceptr = BuildChoiceClass(URGENCY_MEDIUM, b->Type);
-				}
-			}
-		}
-
 		/*
 		**	Build some air defense.
 		*/
@@ -5943,17 +5926,6 @@ int HouseClass::AI_Building(void)
 				}
 			}
 		}
-
-// jmarshall - AI build prism towers.
-		current = BQuantity[STRUCT_PRISOM];
-		b = &BuildingTypeClass::As_Reference(STRUCT_PRISOM);
-		if (Can_Build(b, ActLike) && (b->Cost_Of() < money || hasincome) && Power_Fraction() >= 1) {
-			choiceptr = BuildChoice.Alloc();
-			if (choiceptr != NULL) {
-				*choiceptr = BuildChoiceClass(URGENCY_MEDIUM, b->Type);
-			}
-		}
-// jmarshall end
 
 		/*
 		**	Build a tech center as soon as possible.
@@ -7430,9 +7402,7 @@ void HouseClass::Read_INI(CCINIClass & ini)
 		p->Credits = p->Control.InitialCredits;
 
 		int iq = ini.Get_Int(hname, "IQ", 0);
-// jmarshall - if IQ index is too high set to max IQ not to 1
-		if (iq > Rule.MaxIQ) iq = Rule.MaxIQ;
-// jmarshall end
+		if (iq > Rule.MaxIQ) iq = 1;
 		p->IQ = p->Control.IQ = iq;
 
 		p->Control.Edge = ini.Get_SourceType(hname, "Edge", SOURCE_NORTH);
@@ -7480,7 +7450,7 @@ void HouseClass::Write_INI(CCINIClass & ini)
 		if (p != NULL) {
 			char const * name = p->Class->IniName;
 
-			//ini.Clear(name);
+			ini.Clear(name);
 			if (i >= HOUSE_MULTI1) continue;
 
 			if (p->Control.InitialCredits != control.InitialCredits) {
@@ -7606,11 +7576,6 @@ bool HouseClass::Is_Hack_Prevented(RTTIType rtti, int value) const
  *=============================================================================================*/
 bool HouseClass::Fire_Sale(void)
 {
-	// Toggle the fire sale ability.
-	if(!fireSaleAvailable) {
-		return false;
-	}
-
 	if (CurBuildings > 0) {
 		for (int index = 0; index < Buildings.Count(); index++) {
 			BuildingClass * b = Buildings.Ptr(index);

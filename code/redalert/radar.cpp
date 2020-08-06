@@ -393,7 +393,7 @@ void RadarClass::Draw_It(bool forced)
 
 //		strcpy(name, "NATORADR.SHP" );
 //		if (Session.Type == GAME_NORMAL) {
-			strcpy(name, _hiresradarnames[PlayerPtr->ActLike % HOUSE_BAD]);
+			strcpy(name, _hiresradarnames[PlayerPtr->ActLike]);
 //		}
 		#ifndef NDEBUG
 			RawFileClass file(name);
@@ -409,12 +409,12 @@ void RadarClass::Draw_It(bool forced)
 			} else {
 				RadarPulse = MFCD::Retrieve(name);
 			}
-			strcpy(name, _frames[PlayerPtr->ActLike % HOUSE_BAD]);
+			strcpy(name, _frames[PlayerPtr->ActLike]);
 			RawFileClass file3(name);
 			if (file3.Is_Available()) {
 				RadarFrame = Load_Alloc_Data(file3);
 			} else {
-				RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike % HOUSE_BAD]);
+				RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike]);
 			}
 		#else
 			RadarAnim = MFCD::Retrieve(name);
@@ -425,7 +425,7 @@ void RadarClass::Draw_It(bool forced)
 			} else {
 				RadarPulse = MFCD::Retrieve(name);
 			}
-		RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike % HOUSE_BAD]);
+		RadarFrame = MFCD::Retrieve(_frames[PlayerPtr->ActLike]);
 		#endif
 		_house = PlayerPtr->ActLike;
 	}
@@ -1081,13 +1081,28 @@ void RadarClass::Plot_Radar_Pixel(CELL cell)
 					ptr = &TemplateTypeClass::As_Reference(TEMPLATE_CLEAR1);
 					icon = cellptr->Clear_Icon();
 				}
-				IsoTile *tile = (IsoTile *)ptr->Get_Image_Data();
-				if(icon > tile->NumTiles() || tile->GetTileInfo(icon) == NULL) {
-					icon = 0;
-				}
 
-				IsoTileImageHeader* tileHeader = tile->GetTileInfo(icon);
-				GL_FillRect(tileHeader->LowRGB.GetRawRed(), tileHeader->LowRGB.GetRawGreen(), tileHeader->LowRGB.GetRawBlue(), x, y,ZoomFactor, ZoomFactor);
+				IconsetClass const * iconset = (IconsetClass const *)ptr->Get_Image_Data();
+				unsigned char const * icondata = iconset->Icon_Data();
+
+
+				/*
+				**	Convert the logical icon number into the actual icon number.
+				*/
+				icon &= 0x00FF;
+				icon = *(iconset->Map_Data() + icon);
+// jmarshall
+				unsigned char * data = (unsigned char *)icondata + icon*(24*24);
+				Image_t* image;
+				{
+					char tmp[512];
+					sprintf(tmp, "radar_%d_%d", ptr->Type, icon);
+					image = Image_CreateImageFrom8Bit(tmp, 24, 24, (unsigned char*)data);
+				}
+				GL_RenderImage(image, x, y, ZoomFactor, ZoomFactor);
+// jmarshall end
+				//Buffer_To_Page(0, 0, 24, 24, data, _TileStage);
+				//_TileStage.Scale(*LogicPage, 0, 0, x, y, 24, 24, ZoomFactor, ZoomFactor, TRUE);
 			} else {
 //				LogicPage->Fill_Rect(x, y, x+ZoomFactor-1, y+ZoomFactor-1, cellptr->Cell_Color(false));
 /*BG*/		LogicPage->Put_Pixel(x, y, cellptr->Cell_Color(false));
@@ -1491,7 +1506,7 @@ void RadarClass::Radar_Cursor(int forced)
 		y1-= _last_frame;
 		x2+= _last_frame;
 		y2+= _last_frame;
-		
+
 		/*
 		** Finally mark the map (actually remove the marks that indicate the radar cursor was there
 		*/

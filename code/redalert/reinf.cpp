@@ -438,20 +438,20 @@ bool Do_Reinforcements(TeamTypeClass const * teamtype)
 
 	CELL cell = Map.Calculated_Cell(source, teamtype->Origin, -1, object->Techno_Type_Class()->Speed);
 #ifdef FIXIT_ANTS
-	///*
-	//**	For the ants, they will pop out of the ant hill directly.
-	//*/
-	//if (teamtype->Origin != -1 && object->What_Am_I() == RTTI_UNIT && 
-	//		(*((UnitClass*)object) == UNIT_ANT1 ||
-	//		*((UnitClass*)object) == UNIT_ANT2 ||
-	//		*((UnitClass*)object) == UNIT_ANT3))  {
-	//	CELL newcell = Scen.Waypoint[teamtype->Origin];
-	//	if (newcell != -1)  {
-	//		if (Map[newcell].TType == TEMPLATE_HILL01)  {
-	//			cell = newcell;
-	//		}
-	//	}
-	//}
+	/*
+	**	For the ants, they will pop out of the ant hill directly.
+	*/
+	if (teamtype->Origin != -1 && object->What_Am_I() == RTTI_UNIT && 
+			(*((UnitClass*)object) == UNIT_ANT1 ||
+			*((UnitClass*)object) == UNIT_ANT2 ||
+			*((UnitClass*)object) == UNIT_ANT3))  {
+		CELL newcell = Scen.Waypoint[teamtype->Origin];
+		if (newcell != -1)  {
+			if (Map[newcell].TType == TEMPLATE_HILL01)  {
+				cell = newcell;
+			}
+		}
+	}
 #endif
 
 	CELL newcell = cell;

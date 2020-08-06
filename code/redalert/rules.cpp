@@ -703,8 +703,6 @@ bool RulesClass::Heap_Maximums(CCINIClass & ini)
 	new WeaponTypeClass("AirAssault");
 #endif
 
-	new WeaponTypeClass("PrismZap");
-
 	return(true);
 }
 

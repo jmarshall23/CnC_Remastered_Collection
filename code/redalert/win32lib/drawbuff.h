@@ -63,7 +63,7 @@ extern "C" {
 
 struct Image_t;
 
-Image_t* Load_Stamp(const char* name, const void* icondata, void *terrainPalette);
+Image_t* Load_Stamp(const char* name, const void* icondata);
 int Stamp_GetIconIndex(Image_t* iconImage, int icon);
 void Get_Stamp_Size(const void* icondata, int *width, int *height);
 Image_t* Load_StampHD(int theater, const char* iconName, const void *icondata);

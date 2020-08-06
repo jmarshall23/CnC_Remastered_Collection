@@ -98,7 +98,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "function.h"
-#include "image.h"
 
 /*
 **	Selected objects have a special marking box around them. This is the shapes that are
@@ -142,8 +141,6 @@ ObjectClass::ObjectClass(RTTIType rtti, int id) :
 	Strength(255),
 	IsSelectedMask(0)		// Mask showing who has selected this object
 {
-	renderX = -1;
-	renderY = -1;
 }
 
 
@@ -1298,13 +1295,6 @@ bool ObjectClass::Select(bool allow_mixed)
 	return(true);
 }
 
-//
-// ObjectClass::SetRenderXY
-//
-void ObjectClass::SetRenderXY(int x, int y) {
-	renderX = x;
-	renderY = y;
-}
 
 /***********************************************************************************************
  * ObjectClass::Render -- Displays the object onto the map.                                    *
@@ -1336,7 +1326,7 @@ bool ObjectClass::Render(bool forced) const
 		const_cast<ObjectClass*>(this)->IsToDisplay = false;		// added const_cast ST - 5/9/2019
 
 		if (Map.Coord_To_Pixel(coord, x, y)) {
-			CellClass::ConvertCoordsToIsometric(x, y);
+
 			/*
 			**	Draw the object itself
 			*/
@@ -2210,28 +2200,6 @@ ObjectTypeClass::ObjectTypeClass(
 	DimensionData = NULL;
 }
 
-Image_t* ObjectTypeClass::LoadCameoImage(const char* fileName) {
-	char fullnamehd[2048];
-
-	// Try and load a HD cameo image.
-	sprintf(fullnamehd, "ui/sidebar/icons/%s.png", fileName);
-	Image_t* hdImage = Image_LoadImage(fullnamehd);
-	if (hdImage) {
-		return hdImage;
-	}
-
-	// If there is no HD image, then load the old 8bit image.
-	char	fullname[_MAX_FNAME + _MAX_EXT];
-	_makepath(fullname, NULL, NULL, fileName, ".SHP");
-	const void* shapefile = MFCD::Retrieve(fullname);
-	int width = Get_Build_Frame_Width(shapefile, -1);
-	int height = Get_Build_Frame_Height(shapefile, -1);
-
-	const char* buffer = (const char* )Build_Frame(shapefile, 0, _ShapeBuffer);
-	Image_t* image = Image_CreateImageFrom8Bit(fullname, width, height, (unsigned char *)buffer);
-	return image;
-}
-
 
 /***********************************************************************************************
  * ObjectTypeClass::Max_Pips -- Fetches the maximum pips allowed for this object.              *
@@ -2338,7 +2306,7 @@ int ObjectTypeClass::Time_To_Build(HousesType ) const
  * HISTORY:                                                                                    *
  *   07/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-struct Image_t* ObjectTypeClass::Get_Cameo_Data(void) const
+void const * ObjectTypeClass::Get_Cameo_Data(void) const
 {
 	return(NULL);
 }

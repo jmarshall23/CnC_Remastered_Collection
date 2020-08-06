@@ -84,8 +84,10 @@
 */
 #include "SidebarGlyphx.h"
 
+std::vector<const ObjectClass*> renderedFrameObjects;
+
 bool HasRenderedObject(const ObjectClass* technoClass) {
-	return technoClass->lastRenderTime == g_startFrameTime;
+	return std::find(renderedFrameObjects.begin(), renderedFrameObjects.end(), technoClass) != renderedFrameObjects.end();
 }
 
 /***********************************************************************************************
@@ -131,13 +133,6 @@ CellClass::CellClass(void) :
 	IsVisibleByPlayerMask(0),
 	CTFFlag(NULL)
 {
-	x_screen_pos = 0;
-	y_screen_pos = 0;
-	x_world_pos = 0;
-	y_world_pos = 0;
-	bigOverlay = NULL;
-	debug_select = 0;
-
 	for (int zone = MZONE_FIRST; zone < MZONE_COUNT; zone++) {
 		Zones[zone] = 0;
 	}
@@ -475,10 +470,6 @@ bool CellClass::Is_Clear_To_Build(SpeedType loco) const
 	**	During scenario initialization, passability is always guaranteed.
 	*/
 	if (ScenarioInit) return(true);
-
-	if (bigOverlay != NULL) {
-		return false;
-	}
 
 	/*
 	**	If there is an object there, then don't allow building.
@@ -950,6 +941,7 @@ static bool _Calc_Partial_Window(int cellx, int celly, int & drawx, int & drawy)
 		ph -= (py + ph) - (ty + th);
 	}
 	if (ph < 1) return(false);
+
 	drawx = drawx - (px-tx);
 	drawy = drawy - (py-ty);
 	return(true);
@@ -1007,68 +999,6 @@ bool CellClass::Get_Template_Info(char *template_name, int &icon, void *&image_d
 	return false;
 }
 
-void CellClass::ConvertCoordsToIsometric(int& x, int& y) {
-	int tileWidth = CELL_PIXEL_W;
-	int tileHeight = CELL_PIXEL_H;
-	float x_div = ((float)x / CELL_PIXEL_W);
-	float y_div = ((float)y / CELL_PIXEL_W);
-
-	int sx = x_div * (tileWidth / 2) - y_div * (tileWidth / 2);
-	int sy = x_div * (tileHeight / 2) + y_div * (tileHeight / 2);
-
-	x = sx;// + (CELL_PIXEL_W * 0.5f);
-	y = sy;// + (CELL_PIXEL_H * 0.5f);
-
-	x = x + (ScreenWidth / 2);
-	y = y - (ScreenWidth / 4);
-}
-
-bool CellClass::ScreenCoordsToIsoTile(int x, int y, int &tileX, int &tileY) {	
-	x = x - (ScreenWidth / 2);
-	y = y + (ScreenWidth / 4);
-
-	float tempPt_x = (2 * y + x) / 2;
-	float tempPt_y = (2 * y - x) / 2;
-
-	tileX = floor(tempPt_x / (CELL_PIXEL_W * 0.5f));
-	tileY = floor(tempPt_y / (CELL_PIXEL_H * 0.5f));
-
-	if (tileX < 0 || tileY < 0 || tileX > 128 || tileY > 128)
-		return false;
-
-	return true;
-}
-
-void CellClass::ConvertIsoCoordsToScreen(int& x, int& y) {
-	int tileX, tileY;
-	x = x - (ScreenWidth / 2);
-	y = y + (ScreenWidth / 4);
-
-	float tempPt_x = (2 * y + x);
-	float tempPt_y = (2 * y - x);
-
-	//x = floor(tempPt_x / (CELL_PIXEL_W)) * CELL_PIXEL_W;
-	//y = floor(tempPt_y / (CELL_PIXEL_H)) * CELL_PIXEL_H;
-	x = tempPt_x;
-	y = tempPt_y;
-
-	//Console_Printf("%d %d\n", x, y);
-}
-
-bool CellClass::ScreenCoordsToIsoCoords(COORDINATE screenCoord, COORDINATE& isoCoord) {
-	int x, y;
-	Map.Coord_To_Pixel(screenCoord, x, y);
-	int tileX, tileY;
-	if (!CellClass::ScreenCoordsToIsoTile(x, y, tileX, tileY)) {
-		return false;
-	}
-	int worldTileX = tileX * CELL_PIXEL_W;
-	int worldTileY = tileY * CELL_PIXEL_H;
-	isoCoord = Map.Pixel_To_Coord(worldTileX, worldTileY);
-	return true;
-}
-
-
 /***********************************************************************************************
  * CellClass::Draw_It -- Draws the cell imagery at the location specified.                     *
  *                                                                                             *
@@ -1092,7 +1022,7 @@ bool CellClass::ScreenCoordsToIsoCoords(COORDINATE screenCoord, COORDINATE& isoC
  *   04/25/1995 JLB : Smudges drawn BELOW overlays.                                            *
  *   07/22/1996 JLB : Objects added to draw process.                                           *
  *=============================================================================================*/
-void CellClass::Draw_It(int x, int y, bool objects)
+void CellClass::Draw_It(int x, int y, bool objects) const
 {
 	assert((unsigned)Cell_Number() <= MAP_CELL_TOTAL);
 
@@ -1109,23 +1039,6 @@ void CellClass::Draw_It(int x, int y, bool objects)
 		int i;
 		char waypt[3];
 	#endif
-		int cellx = Cell_X(cell);
-		int celly = Cell_Y(cell);
-		if (cellx < Map.MapCellX || celly < Map.MapCellY) {
-			GL_SetColor(0.35, 0.35, 0.35);
-			//return;
-		}
-
-		if (cellx >= Map.MapCellX + Map.MapCellWidth || celly >= Map.MapCellY + Map.MapCellHeight) {
-			GL_SetColor(0.35, 0.35, 0.35);
-			//return;
-		}
-
-// jmarshall - debug mechanism
-		//if (bigOverlay != NULL) {
-		//	GL_SetColor(0.35, 0.35, 0.35);
-		//}
-// jmarshall end
 
 		CellCount++;
 
@@ -1136,10 +1049,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			ttype = &TemplateTypeClass::As_Reference(TType);
 			icon = TIcon;
 		} else {
-// jmarshall - alternate between the clear tiles if no tile set.
-			int offset = ((celly % 2) == 1) ? 1 : 0;
-			ttype = &TemplateTypeClass::As_Reference((TemplateType)(TEMPLATE_CLEAR1 + ((cellx + offset) % TEMPLATE_CLEAR1F)));
-// jmarshall end
+			ttype = &TemplateTypeClass::As_Reference(TEMPLATE_CLEAR1);
 			icon = Clear_Icon();
 		}
 
@@ -1183,20 +1093,11 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			*/
 			if (ttype->Get_Image_Data()) {
 // jmarshall - hd image should always be valid even if loading legacy assets
-				int ticon = icon;
-				if (debug_select == g_startFrameTime) {
-					GL_SetColor(1.0f, 0.0f, 0.0f);
-				}
-
-				LogicPage->Draw_Stamp(ttype->Get_HDImage_Data(), icon, x_screen_pos, y_screen_pos, NULL, WINDOW_TACTICAL);
-
-				if (debug_select == g_startFrameTime) {
-					GL_SetColor(1.0f, 1.0f, 1.0f);
-				}
+				LogicPage->Draw_Stamp(ttype->Get_HDImage_Data(), icon, x, y, NULL, WINDOW_TACTICAL);
 // jmarshall end
-				//if (remap) {
-				//	LogicPage->Remap(x+Map.TacPixelX, y+Map.TacPixelY, ICON_PIXEL_W, ICON_PIXEL_H, remap);
-				//}
+				if (remap) {
+					LogicPage->Remap(x+Map.TacPixelX, y+Map.TacPixelY, ICON_PIXEL_W, ICON_PIXEL_H, remap);
+				}
 			}
 
 	#ifdef SCENARIO_EDITOR
@@ -1215,7 +1116,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			**	Redraw any smudge.
 			*/
 			if (Smudge != SMUDGE_NONE) {
-				SmudgeTypeClass::As_Reference(Smudge).Draw_It(lastRenderX, lastRenderY, SmudgeData);
+				SmudgeTypeClass::As_Reference(Smudge).Draw_It(x, y, SmudgeData);
 			}
 
 			/*
@@ -1224,7 +1125,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			if (Overlay != OVERLAY_NONE) {
 				OverlayTypeClass const & otype = OverlayTypeClass::As_Reference(Overlay);
 				IsTheaterShape = (bool)otype.IsTheater;	//Tell Build_Frame if this overlay is theater specific
-				CC_Draw_Shape(otype.Get_Image_Data(), OverlayData, (lastRenderX +(CELL_PIXEL_W>>1)), (lastRenderY+(CELL_PIXEL_H>>1)), WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL|SHAPE_GHOST, NULL, DisplayClass::UnitShadow);
+				CC_Draw_Shape(otype.Get_Image_Data(), OverlayData, (x+(CELL_PIXEL_W>>1)), (y+(CELL_PIXEL_H>>1)), WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL|SHAPE_GHOST, NULL, DisplayClass::UnitShadow);
 				IsTheaterShape = false;
 			}
 
@@ -1291,15 +1192,10 @@ void CellClass::Draw_It(int x, int y, bool objects)
 				/*
 				**	Draw the hash-mark cursor:
 				*/
-				{
-					if (Map.ProximityCheck && Is_Clear_To_Build(loco)) {
-						//LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 0, xx, yy, NULL, WINDOW_TACTICAL);
-						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[0], 0, lastRenderX, lastRenderY, WINDOW_TACTICAL, SHAPE_NORMAL);
-					}
-					else {
-						//LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 2, xx, yy, NULL, WINDOW_TACTICAL);
-						CC_DrawHD_Shape(DisplayClass::TransIconsetHD[2], 0, lastRenderX, lastRenderY, WINDOW_TACTICAL, SHAPE_NORMAL);
-					}
+				if (Map.ProximityCheck && Is_Clear_To_Build(loco)) {
+					LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 0, x, y, NULL, WINDOW_TACTICAL);
+				} else {
+					LogicPage->Draw_Stamp(DisplayClass::TransIconsetHD, 2, x, y, NULL, WINDOW_TACTICAL);
 				}
 
 	#ifdef SCENARIO_EDITOR
@@ -1321,7 +1217,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 									(Cell_Y(cell) - Cell_Y(Map.ZoneCell + Map.ZoneOffset)) *
 									tptr->Width;
 // jmarshall - hd image should always be valid even if loading legacy assets
-								LogicPage->Draw_Stamp(tptr->Get_HDImage_Data(), icon, lastRenderX, lastRenderY, NULL, WINDOW_TACTICAL);
+								LogicPage->Draw_Stamp(tptr->Get_HDImage_Data(), icon, x, y, NULL, WINDOW_TACTICAL);
 // jmarshall end
 							}
 							break;
@@ -1331,16 +1227,14 @@ void CellClass::Draw_It(int x, int y, bool objects)
 						**	it means nothing.
 						*/
 						case RTTI_OVERLAYTYPE:
-							{
-								OverlayTypeClass::As_Reference(((OverlayTypeClass*)Map.PendingObject)->Type).Draw_It(lastRenderX, lastRenderY, OverlayData);
-							}
+							OverlayTypeClass::As_Reference(((OverlayTypeClass *)Map.PendingObject)->Type).Draw_It(x, y, OverlayData);
 							break;
 
 						/*
 						**	Draw a smudge
 						*/
 						case RTTI_SMUDGETYPE:
-							SmudgeTypeClass::As_Reference(((SmudgeTypeClass *)Map.PendingObject)->Type).Draw_It(lastRenderX, lastRenderY, 0);
+							SmudgeTypeClass::As_Reference(((SmudgeTypeClass *)Map.PendingObject)->Type).Draw_It(x, y, 0);
 							break;
 
 						default:
@@ -1353,14 +1247,6 @@ void CellClass::Draw_It(int x, int y, bool objects)
 	#ifdef CHEAT_KEYS
 		}
 	#endif
-		//{
-		//		int isox = x, isoy = y;
-		//		ConvertCoordsToIsometric(isox, isoy);
-		//		char tmp[12];
-		//		sprintf(tmp, "%d", cell);
-		//		GL_DrawText(6, isox, isoy, tmp);
-		//}
-
 		BEnd(BENCH_CELL);
 	}
 
@@ -1449,14 +1335,11 @@ void CellClass::Draw_It(int x, int y, bool objects)
 			if (HasRenderedObject(object)) {
 				continue;
 			}
-
-			object->lastRenderTime = g_startFrameTime;
+			renderedFrameObjects.push_back(object);
 			int xx,yy;
-			if (object->IsToDisplay && (!object->Is_Techno() || ((TechnoClass *)object)->Visual_Character() == VISUAL_NORMAL) && Map.Coord_To_Pixel(object->Render_Coord(), xx, yy)) {				
-				{
-					ConvertCoordsToIsometric(xx, yy);
-					object->SetRenderXY(xx, yy);
-					object->Draw_It(xx, yy, WINDOW_TACTICAL);
+			if (object->IsToDisplay && (!object->Is_Techno() || ((TechnoClass *)object)->Visual_Character() == VISUAL_NORMAL) && Map.Coord_To_Pixel(object->Render_Coord(), xx, yy)) {
+				if (_Calc_Partial_Window(x, y, xx, yy)) {
+					object->Draw_It(xx, yy, WINDOW_PARTIAL);
 					if (Debug_Map) {
 						object->IsToDisplay = true;
 					} else {
@@ -1469,7 +1352,7 @@ void CellClass::Draw_It(int x, int y, bool objects)
 		BEnd(BENCH_OBJECTS);
 	}
 #endif
-	GL_SetColor(1, 1, 1);
+
 }
 
 
@@ -3023,10 +2906,6 @@ bool CellClass::Is_Clear_To_Move(SpeedType loco, bool ignoreinfantry, bool ignor
 	*/
 	if (loco == SPEED_WINGED) {
 		return(true);
-	}
-
-	if (bigOverlay != NULL) {
-		return false;
 	}
 
 	/*

@@ -3064,15 +3064,6 @@ bool TechnoClass::Electric_Zap(COORDINATE target_coord, int which, WindowNumberT
 		gonnadraw = true;
 	}
 
-	TechnoTypeClass const& tclass = *Techno_Type_Class();
-	WeaponTypeClass const* weapon = (which == 0) ? tclass.PrimaryWeapon : tclass.SecondaryWeapon;
-	if (weapon->Prism) {
-		CellClass::ConvertCoordsToIsometric(x, y);
-		CellClass::ConvertCoordsToIsometric(x1, y1);
-		GL_RenderLine(x, y, x1, y1, 163, 203, 205, 3.0f);
-		return true;
-	}
-
 	static int _shape[]={ 2, 3, 1, 0, 2, 3, 1, 0};
 	static int  _xadd[8][8]={
 		{ 0, 8, 8, 8, 0, 0, 0, 0},
@@ -3138,14 +3129,10 @@ bool TechnoClass::Electric_Zap(COORDINATE target_coord, int which, WindowNumberT
 				// Electric zap coordinates are always tactical, so don't use the partial window if passed - SKY
 				x += _xadd[facing][lastfacing];
 				y += _yadd[facing][lastfacing];
-				int xx = x;
-				int yy = y;
-				CellClass::ConvertCoordsToIsometric(xx, yy);
-
 				if (remap != NULL) {
-					CC_Draw_Shape(this, "LITNING", LightningShapes, _shape[facing]+(shots ? 4 : 0), xx, yy, (window != WINDOW_PARTIAL) ? window : WINDOW_TACTICAL, SHAPE_FADING|SHAPE_CENTER|SHAPE_WIN_REL, remap);
+					CC_Draw_Shape(this, "LITNING", LightningShapes, _shape[facing]+(shots ? 4 : 0), x, y, (window != WINDOW_PARTIAL) ? window : WINDOW_TACTICAL, SHAPE_FADING|SHAPE_CENTER|SHAPE_WIN_REL, remap);
 				} else {
-					CC_Draw_Shape(this, "LITNING", LightningShapes, _shape[facing]+(shots ? 4 : 0), xx, yy, (window != WINDOW_PARTIAL) ? window : WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL);
+					CC_Draw_Shape(this, "LITNING", LightningShapes, _shape[facing]+(shots ? 4 : 0), x, y, (window != WINDOW_PARTIAL) ? window : WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_WIN_REL);
 				}
 				lastfacing = facing;
 			}
@@ -4462,17 +4449,13 @@ void TechnoClass::Techno_Draw_Object(void const * shapefile, int shapenum, int x
 	assert(IsActive);
 
 	if (rotation != DIR_N || scale != 0x0100) {
-		//Disable_Uncompressed_Shapes();
+		Disable_Uncompressed_Shapes();
 	}
 
 	if (shapefile != NULL) {
 		VisualType visual = Visual_Character();
 		void const * remap = Remap_Table();
 		void const * shadow = Map.UnitShadow;
-
-		if (shapenum >= Get_Build_Frame_Count(shapefile)) {
-			shapenum = 0;
-		}
 
 #ifdef PARTIAL
 		/*
@@ -4564,7 +4547,7 @@ void TechnoClass::Techno_Draw_Object(void const * shapefile, int shapenum, int x
 #endif
 	}
 
-//	Enable_Uncompressed_Shapes();
+	Enable_Uncompressed_Shapes();
 }
 
 
@@ -4724,7 +4707,7 @@ void const * TechnoClass::Remap_Table(void) const
 	if (Techno_Type_Class()->IsRemappable) {
 		return(House->Remap_Table(IsBlushing, Techno_Type_Class()->Remap));
 	}
-	return NULL;
+	return(ColorRemaps[PCOLOR_GOLD].RemapTable);
 }
 
 
@@ -6592,7 +6575,7 @@ int TechnoTypeClass::Cost_Of(void) const
  * HISTORY:                                                                                    *
  *   07/29/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-struct Image_t*TechnoTypeClass::Get_Cameo_Data(void) const
+void const * TechnoTypeClass::Get_Cameo_Data(void) const
 {
 	return(CameoData);
 }
@@ -6776,15 +6759,7 @@ bool TechnoTypeClass::Read_INI(CCINIClass & ini)
 		SightRange = ini.Get_Int(Name(), "Sight", SightRange);
 		Level = ini.Get_Int(Name(), "TechLevel", Level);
 		MaxSpeed = MPHType(_Scale_To_256(ini.Get_Int(Name(), "Speed", fixed(MaxSpeed, 256) * 100)));
-
-		bool fastBuild = ini.Get_Int("General", "FastBuild", 0);
-
-		if(fastBuild) {
-			Cost = 15;
-		}
-		else {
-			Cost = ini.Get_Int(Name(), "Cost", Cost);
-		}
+		Cost = ini.Get_Int(Name(), "Cost", Cost);
 		MaxAmmo = ini.Get_Int(Name(), "Ammo", MaxAmmo);
 		Risk = Reward = Points = ini.Get_Int(Name(), "Points", Points);
 		Ownable = ini.Get_Owners(Name(), "Owner", Ownable);
