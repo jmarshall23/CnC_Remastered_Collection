@@ -124,6 +124,18 @@ void UserInputClass::Process_Input(KeyNumType& key, int& flags)
 					KeyB.Control = true;
 				}
 
+				if(state[SDL_SCANCODE_F5]) {
+					ZoomLevel--;
+					ZoomLevel = max(ZoomLevel, 0);
+					break;
+				}
+
+				if (state[SDL_SCANCODE_F6]) {
+					ZoomLevel++;
+					ZoomLevel = min(ZoomLevel, 7);
+					break;
+				}
+
 				// handle match between SDL and internals (non-text keys)
 				auto element = sdl_keyMapping.find((SDL_KeyCode)event.key.keysym.sym);
 				if (element != sdl_keyMapping.end())
@@ -140,6 +152,7 @@ void UserInputClass::Process_Input(KeyNumType& key, int& flags)
 				{
 					KeyB.ASCII = (char)event.text.text[0];
 				}
+				break;
 		}
 
 		if (Debug_Map || renderConsole)

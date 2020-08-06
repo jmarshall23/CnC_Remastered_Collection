@@ -110,6 +110,9 @@ class RGBClass
 		int Blue_Component(void) const {return((Blue << 2) | (Blue >> 6));};
 		void Set(int color) const;
 
+		unsigned char GetRawRed() { return Red; }
+		unsigned char GetRawGreen() { return Green; }
+		unsigned char GetRawBlue() { return Blue; }
 	private:
 
 		friend class PaletteClass;

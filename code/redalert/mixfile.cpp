@@ -55,6 +55,9 @@
 #include	"mixfile.h"
 
 #include	"cdfile.h"
+#include    <string>
+#include	"crc32.h"
+
 extern MFCD temp;
 
 //template<class T> int Compare(T const *obj1, T const *obj2) {
@@ -162,13 +165,14 @@ MixFileClass<T>::~MixFileClass(void)
  *   07/12/1996 JLB : Handles compressed file header.                                          *
  *=============================================================================================*/
 template<class T>
-MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
+MixFileClass<T>::MixFileClass(char const * filename, PKey const * key, int gameType) :
 	IsDigest(false),
 	IsEncrypted(false),
 	IsAllocated(false),
 	Filename(0),
 	Count(0),
 	DataSize(0),
+	mixFileGameType(gameType),
 	DataStart(0),
 	HeaderBuffer(0),
 	Data(0)
@@ -490,6 +494,47 @@ int compfunc(void const * ptr1, void const * ptr2)
 	return(0);
 }
 
+// https://xhp.xwis.net/documents/MIX_Format.html
+template<class T>
+int MixFileClass<T>::get_id(int game, const char *_name)
+{
+	std::string name = _name;
+	if (game != MIX_FILE_TS)
+	{                                   // for TD and RA
+		int i = 0;
+		unsigned int id = 0;
+		int l = name.length();          // length of the filename
+		while (i < l)
+		{
+			unsigned int a = 0;
+			for (int j = 0; j < 4; j++)
+			{
+				a >>= 8;
+				if (i < l)
+					a += static_cast<unsigned int>(name[i]) << 24;
+				i++;
+			}
+			id = (id << 1 | id >> 31) + a;
+		}
+		return id;
+	}
+	else
+	{                                    // for TS
+		const int l = name.length();
+		int a = l >> 2;
+		if (l & 3)
+		{
+			name += static_cast<char>(l - (a << 2));
+			int i = 3 - (l & 3);
+			while (i--)
+				name += name[a << 2];
+		}
+		Ccrc crc;                        // use a normal CRC function
+		crc.init();
+		crc.do_block(name.c_str(), name.length());
+		return crc.get_crc();
+	}
+}
 
 /***********************************************************************************************
  * MixFileClass::Offset -- Determines the offset of the requested file from the mixfile system.*
@@ -539,9 +584,12 @@ assert(filename != NULL);//BG
 	char filename_upper[_MAX_PATH];
 	strcpy(filename_upper, filename);
 	strupr(filename_upper);
-	long crc = Calculate_CRC(strupr(filename_upper), strlen(filename_upper));
+
 	SubBlock key;
-	key.CRC = crc;
+	key.CRC = get_id(MIX_FILE_RA, filename_upper);
+
+	SubBlock key2;
+	key2.CRC = get_id(MIX_FILE_TS, filename_upper);
 
 	/*
 	**	Sweep through all registered mixfiles, trying to find the file in question.
@@ -554,7 +602,14 @@ assert(filename != NULL);//BG
 		**	Binary search for the file in this mixfile. If it is found, then extract the
 		**	appropriate information and store it in the locations provided and then return.
 		*/
-		block = (SubBlock *)bsearch(&key, ptr->HeaderBuffer, ptr->Count, sizeof(SubBlock), compfunc);
+// jmarshall
+		if (ptr->mixFileGameType == MIX_FILE_RA)
+			block = (SubBlock*)bsearch(&key, ptr->HeaderBuffer, ptr->Count, sizeof(SubBlock), compfunc);
+		else if (ptr->mixFileGameType == MIX_FILE_TS)
+			block = (SubBlock*)bsearch(&key2, ptr->HeaderBuffer, ptr->Count, sizeof(SubBlock), compfunc);
+		else
+			assert(!"Offset invalid game type!");
+// jmarshall end
 		if (block != NULL) {
 			if (mixfile != NULL) *mixfile = ptr;
 			if (size != NULL) *size = block->Size;
@@ -577,7 +632,7 @@ assert(filename != NULL);//BG
 
 	/*
 	**	All the mixfiles have been examined but no match was found. Return with the non success flag.
-	*/
+	*/ 
 assert(1);//BG
 	return(false);
 }

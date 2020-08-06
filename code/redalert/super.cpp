@@ -70,6 +70,7 @@ SuperClass::SuperClass(int recharge, bool powered, VoxType charging, VoxType rea
 	IsPresent(false),
 	IsOneTime(false),
 	IsReady(false),
+	IsNoPreq(false),
 	Control(0),
 	OldStage(-1),
 	VoxRecharge(ready),
@@ -139,11 +140,12 @@ bool SuperClass::Suspend(bool on)
  * HISTORY:                                                                                    *
  *   07/28/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool SuperClass::Enable(bool onetime, bool player, bool quiet)
+bool SuperClass::Enable(bool onetime, bool player, bool quiet, bool skipPreReq)
 {
 	if (!IsPresent) {
 		IsPresent = true;
 		IsOneTime = onetime;
+		IsNoPreq = skipPreReq;
 		bool retval = Recharge(player && !quiet);
 		if (quiet) Suspend(true);
 		return(retval);
@@ -170,7 +172,7 @@ bool SuperClass::Enable(bool onetime, bool player, bool quiet)
  *=============================================================================================*/
 bool SuperClass::Remove(bool forced)
 {
-	if (IsPresent && (!IsOneTime || forced)) {
+	if (IsPresent && (!IsOneTime || forced) && !IsNoPreq) {
 		IsReady = false;
 		IsPresent = false;
 		return(true);

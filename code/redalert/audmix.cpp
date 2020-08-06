@@ -17,6 +17,12 @@ ALCdevice* device = nullptr;
 ALCcontext* context = nullptr;
 
 struct AudioBuffer_t {
+	AudioBuffer_t() {
+		buffer = 0;
+		size = 0;
+		frequency = 0;
+		format = 0;
+	}
 	ALuint buffer;
 	ALsizei size;
 	ALsizei frequency;
@@ -37,6 +43,7 @@ AudioBuffer_t precacheAudioTable[AUDIO_BUFFER_NUMTYPES][MAX_PRECACHE_AUDIO];
 AudioBuffer_t speechPrecacheAudioTable[MAX_PRECACHE_AUDIO];
 AudioBuffer_t musicPrecacheAudioTable[MAX_PRECACHE_AUDIO];
 ALuint streaming_buffers[MAX_STREAM_BUFFERS];
+AudioBuffer_t movieAudioBuffer;
 
 int currentMusicPlaying = -1;
 int currentAudioTSource = 0;
@@ -81,6 +88,10 @@ bool loadWavFile(const char* filename, AudioBuffer_t &audioBuffer) {
 	ALsizei* size = &audioBuffer.size;
 	ALsizei* frequency = &audioBuffer.frequency;
 	ALenum* format = &audioBuffer.format;
+
+	if(audioBuffer.buffer != 0) {
+		alDeleteBuffers(1, &audioBuffer.buffer);
+	}
 
 	try {
 		soundFile = fopen(filename, "rb");
@@ -179,6 +190,25 @@ void AudMix_PlayMusic(int musicId) {
 	alSourcei(audio_sources[MAX_AUDIO_SOURCES - 1], AL_LOOPING, 1);
 	alSourcePlay(audio_sources[MAX_AUDIO_SOURCES - 1]);
 	currentMusicPlaying = musicId;
+}
+
+/*
+=============
+AudMix_PlayMovieAudio
+=============
+*/
+void AudMix_PlayMovieAudio(const char *name) {
+	if(!loadWavFile(name, movieAudioBuffer)) {
+		return;
+	}
+
+	alSourcei(audio_sources[MAX_AUDIO_SOURCES - 1], AL_BUFFER, movieAudioBuffer.buffer);
+	alSourcei(audio_sources[MAX_AUDIO_SOURCES - 1], AL_LOOPING, 0);
+	alSourcePlay(audio_sources[MAX_AUDIO_SOURCES - 1]);
+}
+
+void AudMix_StopMovieAudio(void) {
+	alSourceStop(audio_sources[MAX_AUDIO_SOURCES - 1]);
 }
 
 bool AudMix_IsSourcePlaying(ALuint source) 
@@ -358,9 +388,9 @@ void On_Sound_Effect(int sound_index, int variation, COORDINATE coord, int house
 // void On_Speech(int speech_index) // MBL 02.06.2020
 void On_Speech(int speech_index, HouseClass* house)
 {
-	if (house == NULL) {
+	//if (house == NULL) {
 		PlayAudio(speechPrecacheAudioTable[speech_index], true);
-	}
+	//}
 
 	// DLLExportClass::On_Speech(PlayerPtr, speech_index); // MBL 02.06.2020
 	//if (house == NULL) {

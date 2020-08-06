@@ -96,13 +96,6 @@ const char* Game_Registry_Key();
 // Added. ST - 5/14/2019
 bool ProgEndCalled = false;
 
-extern "C"{
-	extern char		*BigShapeBufferStart;
-	extern char		*TheaterShapeBufferStart;
-	extern BOOL		UseBigShapeBuffer;
-	extern bool		IsTheaterShape;
-}
-
 extern void Free_Heaps(void);
 extern void DLL_Shutdown(void);
 
@@ -126,16 +119,6 @@ BOOL WINAPI DllMain(HINSTANCE instance, unsigned int fdwReason, void *lpvReserve
 		** Red Alert doesn't clean up memory. Do some of that here.
 		*/
 		MFCD::Free_All();
-
-		if (BigShapeBufferStart) {
-			Free(BigShapeBufferStart);
-			BigShapeBufferStart = NULL;
-		}
-
-		if (TheaterShapeBufferStart) {
-			Free(TheaterShapeBufferStart);
-			TheaterShapeBufferStart = NULL;
-		}
 
 		if (_ShapeBuffer) {
 			delete [] _ShapeBuffer;
@@ -174,7 +157,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, unsigned int fdwReason, void *lpvReserve
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
 void Reallocate_Big_Shape_Buffer(void);
-int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
+int PASCAL CnCMain( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
 {
 #ifdef WIN32
 
@@ -936,6 +919,11 @@ void Read_Setup_Options( RawFileClass *config_file )
 
 		ScreenWidth = ini.Get_Int("Options", "Width", 1280);
 		ScreenHeight = ini.Get_Int("Options", "Height", 720);
+		ZoomLevel = ini.Get_Int("Options", "ZoomLevel", 0);
+		if (ZoomLevel > 7)
+			ZoomLevel = 7;
+		if (ZoomLevel < 0)
+			ZoomLevel = 0;
 
 		/*
 		** See if an alternative socket number has been specified

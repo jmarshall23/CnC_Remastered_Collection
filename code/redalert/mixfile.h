@@ -37,6 +37,9 @@ typedef int bool;
 #include	"pk.h"
 #include "buff.h"
 
+#define MIX_FILE_RA 0
+#define MIX_FILE_TS 1
+
 template<class T>
 class MixFileClass : public Node<MixFileClass<T>>
 {
@@ -44,7 +47,7 @@ class MixFileClass : public Node<MixFileClass<T>>
 		char const * Filename;			// Filename of mixfile.
 
 
-		MixFileClass(char const *filename, PKey const * key);
+		MixFileClass(char const *filename, PKey const * key, int gameType = MIX_FILE_RA);
 		~MixFileClass(void);
 
 		static bool Free(char const *filename);
@@ -68,7 +71,9 @@ class MixFileClass : public Node<MixFileClass<T>>
 	private:
 		static MixFileClass * Finder(char const * filename);
 		//long Offset(long crc, long * size = 0) const;	// ST - 5/10/2019
-
+// jmarshall		
+		static int get_id(int game, const char* _name);
+// jmarshall end
 		/*
 		**	If this mixfile has an attached message digest, then this flag
 		**	will be true. The digest is checked only when the mixfile is
@@ -108,6 +113,8 @@ class MixFileClass : public Node<MixFileClass<T>>
 		**	It does not include the header or digest bytes.
 		*/
 		long DataSize;
+
+		int  mixFileGameType;
 
 		/*
 		**	Start of raw data in within the mixfile.

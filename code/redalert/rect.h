@@ -61,13 +61,21 @@ class Rect
 
 		bool Is_Valid(void) const;
 		int Size(void) const {return(Width*Height);}
+		void Clear(void);
+		void AddPoint(int x, int y);
+		void AddIsoPoint(int x, int y);
+		bool ContainsPoint(int x, int y);
 
 //	private:
 		int X;
 		int Y;
+		int X2;
+		int Y2;
 		int Width;
 		int Height;
 };
+
+
 
 
 #endif

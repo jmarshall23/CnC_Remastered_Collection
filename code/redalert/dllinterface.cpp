@@ -6342,8 +6342,8 @@ if (debug_output) {
 			smudge_entry.DrawFlags = SHAPE_WIN_REL;			// Looks like smudges are drawn top left
 			smudge_entry.PositionX = xpixel;
 			smudge_entry.PositionY = ypixel;
-			smudge_entry.Width = Get_Build_Frame_Width(smudge_type.Get_Image_Data());
-			smudge_entry.Height = Get_Build_Frame_Height(smudge_type.Get_Image_Data());
+			smudge_entry.Width = Get_Build_Frame_Width(smudge_type.Get_Image_Data(), 0);
+			smudge_entry.Height = Get_Build_Frame_Height(smudge_type.Get_Image_Data(), 0);
 			smudge_entry.CellX = Cell_X(cell);
 			smudge_entry.CellY = Cell_Y(cell);
 			smudge_entry.ShapeIndex = cell_ptr->SmudgeData;
@@ -6384,8 +6384,8 @@ if (debug_output) {
 			overlay_entry.DrawFlags = SHAPE_CENTER|SHAPE_WIN_REL|SHAPE_GHOST;		// Looks like overlays are drawn centered and translucent
 			overlay_entry.PositionX = xpixel + (CELL_PIXEL_W>>1);
 			overlay_entry.PositionY = ypixel + (CELL_PIXEL_H>>1);
-			overlay_entry.Width = Get_Build_Frame_Width(overlay_type.Get_Image_Data());
-			overlay_entry.Height = Get_Build_Frame_Height(overlay_type.Get_Image_Data());
+			overlay_entry.Width = Get_Build_Frame_Width(overlay_type.Get_Image_Data(), 0);
+			overlay_entry.Height = Get_Build_Frame_Height(overlay_type.Get_Image_Data(), 0);
 			overlay_entry.CellX = Cell_X(cell);
 			overlay_entry.CellY = Cell_Y(cell);
 			overlay_entry.ShapeIndex = cell_ptr->OverlayData;
@@ -6413,8 +6413,8 @@ if (debug_output) {
 			flag_entry.DrawFlags = SHAPE_CENTER|SHAPE_GHOST|SHAPE_FADING;
 			flag_entry.PositionX = xpixel + (ICON_PIXEL_W / 2);
 			flag_entry.PositionY = ypixel + (ICON_PIXEL_H / 2);
-			flag_entry.Width = Get_Build_Frame_Width(image_data);
-			flag_entry.Height = Get_Build_Frame_Height(image_data);
+			flag_entry.Width = Get_Build_Frame_Width(image_data, 0);
+			flag_entry.Height = Get_Build_Frame_Height(image_data, 0);
 			flag_entry.CellX = Cell_X(cell);
 			flag_entry.CellY = Cell_Y(cell);
 			flag_entry.ShapeIndex = Frame % 14;

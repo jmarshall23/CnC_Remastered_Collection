@@ -1015,12 +1015,7 @@ UnitType UnitTypeClass::From_Name(char const * name)
 void UnitTypeClass::Display(int x, int y, WindowNumberType window, HousesType ) const
 {
 	int shape = 0;
-	void const * ptr = Get_Cameo_Data();
-	if (ptr == NULL) {
-		ptr = Get_Image_Data();
-		shape = Rotation/6;
-	}
-	CC_Draw_Shape(ptr, shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
+	CC_DrawHD_Shape(Get_Cameo_Data(), shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
 }
 
 
@@ -1084,17 +1079,7 @@ void UnitTypeClass::One_Time(void)
 			**	Fetch the supporting data files for the unit.
 			*/
 			sprintf(buffer, "%sICON", uclass.Graphic_Name());
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
-			#ifndef NDEBUG
-				RawFileClass datafile(fullname);
-				if (datafile.Is_Available()) {
-					((void const *&)uclass.CameoData) = Load_Alloc_Data(datafile);
-				} else {
-					((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
-				}
-			#else
-				((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
-			#endif
+			((Image_t*&)uclass.CameoData) = LoadCameoImage(buffer);
 //		}
 
 		/*
@@ -1114,8 +1099,8 @@ void UnitTypeClass::One_Time(void)
 
 		((void const *&)uclass.ImageData) = ptr;
 		if (ptr != NULL) {
-			largest = max(largest, (int)Get_Build_Frame_Width(ptr));
-			largest = max(largest, (int)Get_Build_Frame_Height(ptr));
+			largest = max(largest, (int)Get_Build_Frame_Width(ptr, 0));
+			largest = max(largest, (int)Get_Build_Frame_Height(ptr, 0));
 		}
 		{
 			const char* imageFileName = Units_FindHDTexture(fullname, 0, 0);

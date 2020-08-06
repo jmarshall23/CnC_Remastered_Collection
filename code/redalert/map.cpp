@@ -880,7 +880,8 @@ long MapClass::Overpass(void)
 	*/
 	for (int y = 0; y < MapCellHeight; y++) {
 		for (int x = 0; x < MapCellWidth; x++) {
-			CELL cell = (MapCellY+y) * MAP_CELL_W + (MapCellX+x);
+			//CELL cell = (MapCellY+y) * MAP_CELL_W + (MapCellX+x);
+			CELL cell = XY_Cell(x,y); // Replaced because a crash was being caused
 			value += (*this)[cell].Tiberium_Adjust(true);
 			(*this)[cell].Recalc_Attributes();
 		}
@@ -1309,15 +1310,16 @@ if (BlubCell->Overlapper[1]) {
 		**	icon.  If the icon value is out of range or points to an invalid spot,
 		**	return an error.
 		*/
-		if (ttype != TEMPLATE_NONE) {
-			tclass = &TemplateTypeClass::As_Reference(ttype);
-			ticon = (*this)[cell].TIcon;
-			Mem_Copy(Get_Icon_Set_Map(tclass->Get_Image_Data()), map, tclass->Width * tclass->Height);
-			if (ticon < 0 || ticon >= (tclass->Width * tclass->Height) || map[ticon]==0xff) {
-				return (false);
-			}
-		}
-
+// jmarshall - readd this check?
+		//if (ttype != TEMPLATE_NONE) {
+		//	tclass = &TemplateTypeClass::As_Reference(ttype);
+		//	ticon = (*this)[cell].TIcon;
+		//	Mem_Copy(Get_Icon_Set_Map(tclass->Get_Image_Data()), map, tclass->Width * tclass->Height);
+		//	if (ticon < 0 || ticon >= (tclass->Width * tclass->Height) || map[ticon]==0xff) {
+		//		return (false);
+		//	}
+		//}
+// jmarshall end
 		/*
 		**	Validate Overlay
 		*/
@@ -1397,82 +1399,72 @@ if (BlubCell->Overlapper[1]) {
  * HISTORY:                                                                                    *
  *   08/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-ObjectClass * MapClass::Close_Object(COORDINATE coord) const
-{
-	ObjectClass * object = 0;
-	int distance = 0;
-	CELL cell = Coord_Cell(coord);
+ObjectClass * MapClass::Close_Object(int screenx, int screeny) const {
+	int x1 = screenx - 10;
+	int y1 = screeny - 10;
+	int x2 = screenx + 10;
+	int y2 = screeny + 10;
 
 	/*
-	**	Scan through current and adjacent cells, looking for the
-	**	closest object (within reason) to the specified coordinate.
+	**	Ensure that coordinate number one represents the upper left corner
+	**	and coordinate number two represents the lower right corner.
 	*/
-	static int _offsets[] = {0, -1, 1, -MAP_CELL_W, MAP_CELL_W, MAP_CELL_W-1, MAP_CELL_W+1, -(MAP_CELL_W-1), -(MAP_CELL_W+1)};
-	for (int index = 0; index < (sizeof(_offsets) / sizeof(_offsets[0])); index++) {
+	if (x1 > x2) {
+		int temp = x1;
+		x1 = x2;
+		x2 = temp;
+	}
+	if (y1 > y2) {
+		int temp = y1;
+		y1 = y2;
+		y2 = temp;
+	}
+
+	AllowVoice = true;
+	for (int index = 0; index < DisplayClass::Layer[LAYER_GROUND].Count(); index++) {
+		ObjectClass* obj = DisplayClass::Layer[LAYER_GROUND][index];
+		//COORDINATE ocoord = obj->Center_Coord();
+		int x = obj->GetRenderX();
+		int y = obj->GetRenderY();
+
+		// Not on screen.
+		if (x == -1 && y == -1) {
+			continue;
+		}
 
 		/*
-		**	Examine the cell for close object. Make sure that the cell actually is a
-		**	legal one.
+		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
 		*/
-		CELL newcell = cell + _offsets[index];
-		if (In_Radar(newcell)) {
-
-			/*
-			**	Search through all objects that occupy this cell and then
-			**	find the closest object. Check against any previously found object
-			**	to ensure that it is actually closer.
-			*/
-			ObjectClass * o = Array[newcell].Cell_Occupier();
-			while (o != NULL) {
-
-				/*
-				**	Special case check to ignore cloaked object if not allied with the player.
-				*/
-				// Change for client/server multiplayer. ST - 8/7/2019 10:35AM
-				//if (!o->Is_Techno() || ((TechnoClass *)o)->IsOwnedByPlayer || ((TechnoClass *)o)->Cloak != CLOAKED) {
-				if (!o->Is_Techno() || !((TechnoClass *)o)->Is_Cloaked(PlayerPtr)) {
-					int d=-1;
-					if (o->What_Am_I() == RTTI_BUILDING) {
-						d = Distance(coord, Cell_Coord(newcell));
-						if (d > 0x00C0) d = -1;
-					} else {
-						d = Distance(coord, o->Center_Coord());
-					}
-					if (d >= 0 && (!object || d < distance)) {
-						distance = d;
-						object = o;
-					}
-				}
-				o = o->Next;
-			}
+		HouseClass* hptr = HouseClass::As_Pointer(obj->Owner());
+		if (obj->Class_Of().IsSelectable &&
+			x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+			return obj;
 		}
 	}
 
 	/*
-	** Handle aircraft selection separately, since they aren't tracked in cells while flying
+	**	Select any aircraft with the bounding box.
 	*/
-	for (int index = 0; index < Aircraft.Count(); index++) {
-		AircraftClass * aircraft = Aircraft.Ptr(index);
+	for (int air_index = 0; air_index < Aircraft.Count(); air_index++) {
+		AircraftClass* aircraft = Aircraft.Ptr(air_index);
+		//COORDINATE ocoord = aircraft->Center_Coord();
+		int x = aircraft->GetRenderX();
+		int y = aircraft->GetRenderY();
+		// Not on screen.
+		if (x == -1 && y == -1) {
+			continue;
+		}
 
-		if (aircraft->In_Which_Layer() != LAYER_GROUND) {
-			if (!aircraft->Is_Cloaked(PlayerPtr)) {
-				int d = Distance(coord, Coord_Add(aircraft->Center_Coord(), XY_Coord(0, -aircraft->Height)));
-				if (d >= 0 && (!object || d < distance)) {
-					distance = d;
-					object = aircraft;
-				}
-			}
+		/*
+		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
+		*/
+		if (aircraft->Class->IsSelectable &&
+			!aircraft->Is_Selected_By_Player() &&
+			x >= x1 && x <= x2 && y >= y1 && y <= y2) {			
+			return aircraft;
 		}
 	}
-
-	/*
-	**	Only return the object if it is within 1/4 cell distance from the specified
-	**	coordinate.
-	*/
-	if (object && distance > 0xC0) {
-		object = 0;
-	}
-	return(object);
+	return NULL;
 }
 
 

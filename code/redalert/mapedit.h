@@ -49,6 +49,9 @@
 #include <vector>
 #include "sidebareditor.h"
 
+class Light_t;
+class BigOverlay;
+
 /*
 **	This is the maximum # of ObjectTypeClasses the editor has to deal with.
 */
@@ -202,6 +205,8 @@ class MapEditClass : public MouseClass
 //		int Trigger_Needs_Team(TriggerClass *trigger);
 		void Fatal(int txt);
 
+		BigOverlay* GetSelectedBigOverlay(void) { return GrabbedBigOverlay; }
+
 		/*
 		**	mapeddlg.cpp
 		*/
@@ -262,13 +267,16 @@ class MapEditClass : public MouseClass
 		*/
 //		ScenarioVarType ScenVar;
 
-		std::vector<ObjectTypeClass const*> Objects[NUM_EDIT_CLASSES];
+		static std::vector<ObjectTypeClass const*> Objects[NUM_EDIT_CLASSES];
 
 		/*
 		**	Last-selected object to place, and last-selected house of object
 		*/
 		//int LastChoice;						// index of item user picked last
 		HousesType LastHouse;				// house of last item picked
+
+		Light_t *GrabbedLight;
+		BigOverlay* GrabbedBigOverlay;
 
 		/*
 		**	Variables for grabbing/moving objects

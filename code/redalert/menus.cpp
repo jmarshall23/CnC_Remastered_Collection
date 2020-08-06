@@ -532,15 +532,6 @@ int Main_Menu(unsigned long )
 	*/
 	ControlClass * commands = NULL;				// the button list
 
-	TextButtonClass expandbtnCS( BUTTON_EXPAND, TXT_WOL_CS_MISSIONS, TPF_BUTTON, d_button_x, d_button_y, d_button_w, d_button_h );
-
-	if( bExpansionCS )
-		d_button_y += d_button_dy;
-	TextButtonClass expandbtnAM( BUTTON_EXPAND_AM, TXT_WOL_AM_MISSIONS, TPF_BUTTON, d_button_x, d_button_y, d_button_w, d_button_h);
-
-	if( bExpansionAM )
-		d_button_y += d_button_dy;
-
 	TextButtonClass startbtn(BUTTON_START, TXT_START_NEW_GAME, TPF_BUTTON, d_button_x, d_button_y, d_button_w, d_button_h);
 	d_button_y += d_button_dy;
 
@@ -580,11 +571,6 @@ int Main_Menu(unsigned long )
 	*/
 	commands = &startbtn;
 
-	if( bExpansionCS )
-		expandbtnCS.Add_Tail(*commands);
-	if( bExpansionAM )
-		expandbtnAM.Add_Tail(*commands);
-
 	loadbtn.Add_Tail(*commands);
 	multibtn.Add_Tail(*commands);
 	introbtn.Add_Tail(*commands);
@@ -593,17 +579,15 @@ int Main_Menu(unsigned long )
 	/*
 	**	Fill array of button ptrs
 	*/
-	curbutton = bExpansionCS ? 0 : ( bExpansionAM ? 1 : 2 );
+	curbutton = 0;
 
-	buttons[0] = &expandbtnCS;
-	buttons[1] = &expandbtnAM;
-	buttons[2] = &startbtn;
-	buttons[3] = &loadbtn;
-	buttons[4] = &multibtn;
-	buttons[5] = &introbtn;
-	buttons[6] = &exitbtn;
+	buttons[0] = &startbtn;
+	buttons[1] = &loadbtn;
+	buttons[2] = &multibtn;
+	buttons[3] = &introbtn;
+	buttons[4] = &exitbtn;
 
-	buttons[curbutton]->Turn_On();
+	buttons[0]->Turn_On();
 
 	Keyboard->Clear();
 
@@ -684,16 +668,6 @@ int Main_Menu(unsigned long )
 		**	Dispatch the input to be processed.
 		*/
 		switch (input) {
-			case (BUTTON_EXPAND | KN_BUTTON):
-				retval = (input & 0x7FFF) - BUTTON_EXPAND;
-				process = false;
-				break;
-
-			case (BUTTON_EXPAND_AM | KN_BUTTON):
-				retval = (input & 0x7FFF) - BUTTON_EXPAND;
-				process = false;
-				break;
-
 			case (BUTTON_START | KN_BUTTON):
 				retval = (input & 0x7FFF) - BUTTON_EXPAND;
 				process = false;
@@ -776,31 +750,7 @@ int Main_Menu(unsigned long )
 				buttons[curbutton]->Draw_Me(true);
 				retval = curbutton;
 				process = false;
-				break;
-
-
-
-			case KN_LMOUSE:
-				if (Coordinates_In_Region(UserInput.Mouse.X, UserInput.Mouse.Y,
-
-													9*RESFACTOR, 10*RESFACTOR,
-													79*RESFACTOR, 24*RESFACTOR)){
-					Show_Who_Was_Responsible();
-					display = true;
-					Theme.Play_Song(THEME_INTRO);
-
-					break;
-				}
-
-				// secret ANT missions
-				if (Is_Counterstrike_Installed() == true)
-				{
-					if ((Keyboard->Down(KN_LSHIFT) || Keyboard->Down(KN_RSHIFT)) && Coordinates_In_Region(UserInput.Mouse.X, UserInput.Mouse.Y, 260*RESFACTOR, 0, 320*RESFACTOR, 50*RESFACTOR))  {
-						AntsEnabled = true;
-						process = false;
-						retval = 2;		//	To match SEL_START_NEW_GAME
-					}
-				}
+				break;			
 
 			default:
 				break;

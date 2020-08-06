@@ -71,7 +71,7 @@ void ImGui_Placement_Editor(void) {
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.FramePadding = ImVec2(0, 0);
 	ImGui::SetNextWindowSize(ImVec2(480, 220));
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowPos(ImVec2((ScreenWidth / 2) - 240, (ScreenHeight / 2) - 110));
 	ImGui::Begin("Place Object", &toolActive, ImGuiWindowFlags_AlwaysAutoResize /*| ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground*/);
 		ImGui::Columns(3, "outer", true);
 		ImGui::LabelText("Test", "Object Name");
@@ -456,7 +456,7 @@ int MapEditClass::Placement_Dialog(void)
 			Change_Window((int)WINDOW_EDITOR);
 		//	Draw_Box(D_PICTURE_X, D_PICTURE_Y, D_PICTURE_W, D_PICTURE_H, BOXSTYLE_DOWN, false);
 			GL_ForceForegroundRender(true);
-			curobj->Display((WinW/2) + 10, (WinH>>1) + 30, WINDOW_EDITOR, LastHouse);
+			curobj->Display((ScreenWidth / 2) - 160, (ScreenHeight / 2) - 30, WINDOW_EDITOR, LastHouse);
 			GL_ForceForegroundRender(false);
 //			curobj->Display(WinW<<2, WinH>>1, WINDOW_EDITOR, LastHouse);
 			
@@ -1038,12 +1038,16 @@ int MapEditClass::Place_Object(void)
 	**	sub-position closest to the mouse & put him there
 	*/
 	if (PendingObject->What_Am_I() == RTTI_INFANTRYTYPE) {
+		int isoMouseX, isoMouseY;
+		isoMouseX = Get_Mouse_X();
+		isoMouseY = Get_Mouse_Y();
+		CellClass::ConvertIsoCoordsToScreen(isoMouseX, isoMouseY);
 
 		/*
 		**	Find cell sub-position
 		*/
-		if (Is_Spot_Free(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()))) {
-			obj_coord = Closest_Free_Spot(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()));
+		if (Is_Spot_Free(Pixel_To_Coord(isoMouseX, isoMouseY))) {
+			obj_coord = Closest_Free_Spot(Pixel_To_Coord(isoMouseX, isoMouseY));
 		} else {
 			obj_coord = NULL;
 		}

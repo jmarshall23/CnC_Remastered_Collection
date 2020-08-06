@@ -453,12 +453,6 @@ inline BOOL GraphicViewPortClass::Get_IsDirectDraw(void)
  *=============================================================================================*/
 inline BOOL GraphicViewPortClass::Lock(void)
 {
-	BOOL lock = GraphicBuff->Lock();
-	if ( !lock ) return(FALSE);
-
-	if (this != GraphicBuff) {
-		Attach(GraphicBuff, XPos, YPos,  Width, Height);
-	}
 	return(TRUE);
 }
 
@@ -479,11 +473,6 @@ inline BOOL GraphicViewPortClass::Lock(void)
  *=============================================================================================*/
 inline BOOL GraphicViewPortClass::Unlock(void)
 {
-	BOOL unlock = GraphicBuff->Unlock();
-	if (!unlock) return(FALSE);
-	if (this != GraphicBuff && IsDirectDraw && !GraphicBuff->LockCount) {
-		Offset = 0;
-	}
 	return(TRUE);
 }
 
@@ -1041,8 +1030,9 @@ inline void GraphicViewPortClass::Draw_Stamp(void const * icondata, int icon, in
 		if (Lock()){
 			UnCachedIconsDrawn++;
 			extern int ScreenHeight, ScreenWidth;
-			if(y_pixel < ScreenHeight && x_pixel < ScreenWidth)
+			if (y_pixel < ScreenHeight && x_pixel < ScreenWidth) {
 				Buffer_Draw_Stamp_Clip(this, icondata, icon, x_pixel, y_pixel, remap, WindowList[clip_window][WINDOWX], WindowList[clip_window][WINDOWY], WindowList[clip_window][WINDOWWIDTH], WindowList[clip_window][WINDOWHEIGHT]);
+			}
 		}
    }
 	Unlock();

@@ -44,6 +44,7 @@ bool Debug_Icon = false;
 bool Debug_Flag = true;
 bool Debug_Lose = false;
 bool Debug_SkipBriefing = false;
+bool Debug_RenderEditorSplash = false;
 bool Debug_Win = false;
 bool Debug_Map = false;					// true = map editor mode
 bool Debug_Passable = false;			// true = show passable/impassable terrain
@@ -185,6 +186,7 @@ GraphicBufferClass	SysMemPage(DEFAULT_SCREEN_WIDTH, 200, (void*)NULL);
 WinTimerClass *		WindowsTimer=NULL;
 int						ScreenWidth=6072;
 int						ScreenHeight=6072;
+int						ZoomLevel = 6;
 GraphicBufferClass	ModeXBuff;
 bool						InMovie = FALSE;	//Are we currently playing a VQ movie?
 HANDLE					hInstance;
@@ -548,6 +550,10 @@ HouseClass * PlayerPtr;
 **	black.
 */
 PaletteClass CCPalette;
+void* CCGlobalOveridePalette = NULL;
+bool CCGlobalShadowRender = false;
+bool CCGlobalShroudRender = false;
+int	CCPaletteHouseColor = 0;
 PaletteClass GamePalette;
 //PaletteClass InGamePalette;
 PaletteClass BlackPalette(RGBClass(0, 0, 0));
@@ -555,6 +561,16 @@ PaletteClass WhitePalette(RGBClass(RGBClass::MAX_VALUE, RGBClass::MAX_VALUE, RGB
 PaletteClass OriginalPalette;
 PaletteClass ScorePalette;
 
+HSVClass HSVColors[8] = {
+	HSVClass(34, 128, 255), // Gold
+	HSVClass(164,140,255), // Light Blue
+	HSVClass(0,235,255), // Red
+	HSVClass(85,70,255), //  light Green
+	HSVClass(25,230,255), // orange
+	HSVClass(85,235,150), // dark green
+	HSVClass(0, 0, 131),
+	HSVClass(0,180,150)
+};
 
 /***************************************************************************
 **	These are the event queues. One is for holding events until they are ready to be

@@ -299,7 +299,7 @@ class ObjectTypeClass : public AbstractTypeClass
 		virtual short const * Occupy_List(bool placement=false) const;
 		virtual short const * Overlap_List(void) const;
 		virtual BuildingClass * Who_Can_Build_Me(bool intheory, bool legal, HousesType house) const;
-		virtual void const * Get_Cameo_Data(void) const;
+		virtual struct Image_t* Get_Cameo_Data(void) const;
 // jmarshall
 		struct Image_t* Get_HDImage_Data(void) const { return HDImageData; }
 // jmarshall end
@@ -312,6 +312,8 @@ class ObjectTypeClass : public AbstractTypeClass
 
 		static void const * SelectShapes;
 		static void const * PipShapes;
+public: // Has to be public for superweapon icons.
+		static struct Image_t* LoadCameoImage(const char* fileName);
 };
 
 
@@ -500,7 +502,7 @@ class TechnoTypeClass : public ObjectTypeClass
 		**	This is the small icon image that is used to display the object in
 		**	the sidebar for construction selection purposes.
 		*/
-		void const * CameoData;
+		struct Image_t *CameoData;
 
 		/*
 		**	The number of animation frames allotted to rotation is specified here.
@@ -575,7 +577,7 @@ class TechnoTypeClass : public ObjectTypeClass
 		virtual int Max_Passengers(void) const {return(MaxPassengers);}
 		virtual int Repair_Cost(void) const;
 		virtual int Repair_Step(void) const;
-		virtual void const * Get_Cameo_Data(void) const;
+		virtual struct Image_t *Get_Cameo_Data(void) const;
 		virtual int Cost_Of(void) const;
 		virtual int Time_To_Build(HousesType house) const;
 		virtual int Get_Ownable(void) const;
@@ -818,8 +820,21 @@ class BuildingTypeClass : public TechnoTypeClass {
 		static void const * WarFactoryOverlay;
 		static Image_t* WarFactoryHDOverlay;
 
+		const void* CustomTheatrePalette[3];
+		const void* IdleAnimShape;
+		const void* ActiveAnimAnimShape;
+		int IdleAnimIgnorePowerState;
+		int IdleHasShadowFrames;
+		int IdleAnimNonDamagedStart;
+		int IdleAnimNonDamagedFrames;
+		int IdleAnimDamagedStart;
+		int IdleAnimDamagedFrames;
+		int ActiveAnimNonDamagedStart;
+		int ActiveAnimNonDamagedFrames;
+		int ActiveAnimDamagedStart;
+		int ActiveAnimDamagedFrames;	
+		int RenderOffsetY;
 	private:
-
 		/*
 		**	This is a pointer to a list of offsets (from the upper left corner) that
 		**	are used to indicate the building's "footprint". This footprint is used
@@ -841,7 +856,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 		void const * BuildupData;
 
 		void Init_Anim(BStateType state, int start, int count, int rate) const;
-		static Image_t* LoadHDImage(const char* fullname, int &numHDShapes);
+		static Image_t* LoadHDImage(const char* fullname, int &numHDShapes, bool remapHouse);
 };
 
 

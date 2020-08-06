@@ -234,6 +234,8 @@ struct NoInitClass {
 #include	"crcstraw.h"
 #include	"shastraw.h"
 #include	"rndstraw.h"
+#include    "light.h"
+#include    "rendertexture.h"
 
 // Should be part of WWLIB.H. This is used in JSHELL.CPP.
 typedef struct {
@@ -716,12 +718,17 @@ long __cdecl Buffer_Frame_To_Page(int shapeNum, int x, int y, int w, int h, Imag
 /*
 **	KEYFRAME.CPP
 */
+bool Get_Build_TS_Shape(const void* dataptr);
+void* Get_Build_TS_FrameOffset(const void* dataptr, int framenum);
+
 INT_PTR Build_Frame(void const *dataptr, unsigned short framenumber, void *buffptr);
 unsigned short Get_Build_Frame_Count(void const *dataptr);
-unsigned short Get_Build_Frame_X(void const *dataptr);
-unsigned short Get_Build_Frame_Y(void const *dataptr);
-unsigned short Get_Build_Frame_Width(void const *dataptr);
-unsigned short Get_Build_Frame_Height(void const *dataptr);
+bool Get_Build_TiberianSun_Format(void const* dataptr);
+unsigned short Get_Build_Frame_X(void const *dataptr, int frame);
+unsigned short Get_Build_Frame_Y(void const *dataptr, int frame);
+bool Get_Build_Is_Compressed(void const* dataptr, int frame);
+unsigned short Get_Build_Frame_Width(void const *dataptr, int frame);
+unsigned short Get_Build_Frame_Height(void const *dataptr, int frame);
 bool Get_Build_Frame_Palette(void const *dataptr, void *palette);
 int Get_Last_Frame_Length(void);
 
@@ -1082,9 +1089,6 @@ void Device_Present(void);
 */
 void GlyphX_Debug_Print(const char *debug_text);
 
-void Disable_Uncompressed_Shapes (void);
-void Enable_Uncompressed_Shapes (void);
-
 int Cmd_Argc();
 char* Cmd_Argv(int index);
 
@@ -1194,6 +1198,9 @@ const char* Units_FindHDTexture(const char* shapeFileName, int shapeNum, int fra
 
 struct Image_t;
 void Sys_SetOverlayImage(Image_t* image);
+int Sys_Milliseconds(void);
+
+void RenderBriefing(void);
 
 extern bool g_inMainMenu;
 extern KeyNumType	g_globalKeyNumType;
@@ -1201,4 +1208,5 @@ extern int			g_globalKeyFlags;
 extern float       animFrameNum;
 
 extern bool g_loadingPlague;
+extern int	g_startFrameTime;
 #endif

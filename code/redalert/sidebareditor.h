@@ -14,3 +14,5 @@ private:
 private:
 	Image_t*			metalplt;
 };
+
+extern bool Debug_LockScroll;

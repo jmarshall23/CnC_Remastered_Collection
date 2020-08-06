@@ -35,9 +35,9 @@
  *   Rect::Intersect -- Find the intersection between two rectangles.                          *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-
+#include    "function.h"
 #include	"rect.h"
-
+#include	<limits.h>
 
 /***********************************************************************************************
  * Rect::Rect -- Constructs a rectangle object.                                                *
@@ -168,6 +168,48 @@ Rect const Rect::Intersect(Rect const & rectangle, int * x, int * y) const
 	return(r);
 }
 
+void Rect::Clear(void) 
+{
+	X = INT_MAX;
+	Y = INT_MAX;
+	X2 = -INT_MAX;
+	Y2 = -INT_MAX;
+	Width = INT_MAX;
+	Height = INT_MAX;
+}
+
+void Rect::AddPoint(int xin, int yin)
+{
+	if(xin < X) {
+		X = xin;
+	}
+	if(xin > X2) {
+		X2 = xin;
+	}
+	if (yin < Y) {
+		Y = yin;
+	}
+	if (yin > Y2) {
+		Y2 = yin;
+	}
+
+	Width = X2 - X;
+	Height = Y2 - Y;
+}
+
+bool Rect::ContainsPoint(int x, int y)
+{
+	if (x < X || y < Y || x > X2 || y > Y2) {
+		return false;
+	}
+	return true;
+}
+
+void Rect::AddIsoPoint(int x, int y)
+{
+	CellClass::ConvertCoordsToIsometric(x, y);
+	AddPoint(x, y);
+}
 
 Rect const Union(Rect const & rect1, Rect const & rect2)
 {

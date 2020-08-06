@@ -72,6 +72,7 @@ extern bool Debug_Flag;
 extern bool Debug_Lose;
 extern bool Debug_SkipBriefing;
 extern bool Debug_Map;
+extern bool Debug_RenderEditorSplash;
 extern bool Debug_Win;
 extern bool Debug_Icon;
 extern bool Debug_Passable;
@@ -133,6 +134,7 @@ extern LPDIRECTSOUND				SoundObject;
 extern LPDIRECTSOUNDBUFFER		PrimaryBufferPtr;
 extern int							ScreenWidth;
 extern int							ScreenHeight;
+extern int							ZoomLevel;
 extern GraphicBufferClass		ModeXBuff;
 
 #else
@@ -319,6 +321,11 @@ extern bool							SpecialFlag;
 extern int							ScenarioInit;
 extern HouseClass *				PlayerPtr;
 extern PaletteClass 				CCPalette;
+extern void*						CCGlobalOveridePalette;
+extern bool							CCGlobalShadowRender;
+extern bool							CCGlobalShroudRender;
+extern int							CCPaletteHouseColor;
+extern HSVClass						HSVColors[8];
 extern PaletteClass 				BlackPalette;
 extern PaletteClass 				WhitePalette;
 extern PaletteClass 				GamePalette;

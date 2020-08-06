@@ -87,12 +87,30 @@
 
 #include	"function.h"
 #include	"vortex.h"
+#include    "image.h"
+#include	"bigoverlay.h"
+
+struct AdjancentWeight_t {
+	AdjancentWeight_t() {
+		x = 0;
+		y = 0;
+	}
+	void Set(int x, int y) {
+		this->x = x;
+		this->y = y;
+	}
+
+	int x;
+	int y;
+};
 
 /*
 **	These layer control elements are used to group the displayable objects
 **	so that proper overlap can be obtained.
 */
 LayerClass DisplayClass::Layer[LAYER_COUNT];
+
+CellDisplayCache_t DisplayClass::visibleCellTable[MAP_CELL_W][MAP_CELL_H];
 
 /*
 ** Fading tables
@@ -109,13 +127,13 @@ unsigned char DisplayClass::WhiteTranslucentTable[(1+1)*256];
 unsigned char DisplayClass::MouseTranslucentTable[(4+1)*256];
 void const * DisplayClass::TransIconset;
 // jmarshall 
-Image_t*	DisplayClass::TransIconsetHD;
+Image_t* DisplayClass::TransIconsetHD[3] = { 0 };
 // jmarshall end
 unsigned char DisplayClass::UnitShadow[(USHADOW_COL_COUNT+1)*256];
 unsigned char DisplayClass::UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
 unsigned char DisplayClass::SpecialGhost[2*256];
 
-void const * DisplayClass::ShadowShapes;
+Image_t *DisplayClass::ShadowShapes;
 unsigned char DisplayClass::ShadowTrans[(SHADOW_COL_COUNT+1)*256];
 
 /*
@@ -190,7 +208,8 @@ DisplayClass::DisplayClass(void) :
 {
 	ShadowShapes = 0;
 	TransIconset = 0;
-	TransIconsetHD = 0;
+	cellDisplayCache = NULL;
+	numCachedDisplayCells = 0;
 
 	Set_View_Dimensions(0, 8 * RESFACTOR, ScreenWidth, ScreenHeight);
 }
@@ -231,21 +250,35 @@ void DisplayClass::One_Time(void)
 	/*
 	**	Load the generic transparent icon set.
 	*/
-	TransIconset = MFCD::Retrieve("TRANS.ICN");
 // jmarshall
-	TransIconsetHD = Load_Stamp("TRANS_ICON", TransIconset);
-// jmarshall end
+	TransIconset = MFCD::Retrieve("TRANS.ICN");
+	TransIconsetHD[0] = Image_LoadImage("ui/trans/trans0.png");
+	TransIconsetHD[1] = Image_LoadImage("ui/trans/trans1.png");
+	TransIconsetHD[2] = Image_LoadImage("ui/trans/trans2.png");
 
-	#ifndef NDEBUG
-		RawFileClass file("SHADOW.SHP");
-		if (file.Is_Available()) {
-			ShadowShapes = Load_Alloc_Data(file);
-		} else {
-			ShadowShapes = MFCD::Retrieve("SHADOW.SHP");
-		}
-	#else
-		ShadowShapes = MFCD::Retrieve("SHADOW.SHP");
-	#endif
+	//ShadowShapes = Image_LoadImage("ui/shroud.png");
+	const void* ShadowShapeBuffers = MFCD::Retrieve("shroud.shp");
+	int ShadowShapeWidth = Get_Build_Frame_Width(ShadowShapeBuffers, -1);
+	int ShadowShapeHeight = Get_Build_Frame_Height(ShadowShapeBuffers, -1);
+	
+	CCGlobalShroudRender = true;
+	INT_PTR shapeptr = Build_Frame(ShadowShapeBuffers, 0, _ShapeBuffer);
+	ShadowShapes = Image_CreateImageFrom8Bit("ShadowShapes", ShadowShapeWidth, ShadowShapeHeight, (unsigned char *)shapeptr);
+	
+	int numFrames = Get_Build_Frame_Count(ShadowShapeBuffers);
+	for (int i = 1; i < numFrames; i++) {
+		shapeptr = Build_Frame(ShadowShapeBuffers, i, _ShapeBuffer);
+		Image_Add8BitImage(ShadowShapes, 0, i, ShadowShapeWidth, ShadowShapeHeight, (unsigned char*)shapeptr, NULL, NULL);
+	}
+	CCGlobalShroudRender = false;
+
+
+	Image_t* sceneAlbedoTexture = Image_CreateBlankImage("sceneAlbedoTexture", ScreenWidth, ScreenHeight, true);
+	Image_t* sceneDepthTexture = Image_CreateDepthImage("sceneDepthTexture", ScreenWidth, ScreenHeight);
+
+	sceneRenderTexture = new RenderTexture(sceneAlbedoTexture, sceneDepthTexture);
+	sceneRenderTexture->InitRenderTexture();
+// jmarshall end
 
 	Set_View_Dimensions(0, 0);
 }
@@ -275,6 +308,7 @@ void DisplayClass::Init_Clear(void)
 	*/
 	PendingObjectPtr = 0;
 	PendingObject = 0;
+	zoomLevel = 0;
 	PendingHouse = HOUSE_NONE;
 	CursorSize = 0;
 	IsTargettingMode = SPC_NONE;
@@ -569,21 +603,43 @@ short const * DisplayClass::Text_Overlap_List(char const * text, int x, int y) c
 void DisplayClass::Set_View_Dimensions(int x, int y, int width, int height)
 {
 	if (width == -1) width = SeenBuff.Get_Width();
-	TacLeptonWidth = Pixel_To_Lepton( width - x);
+	TacLeptonWidth = Pixel_To_Lepton( width - x) * 2.5;
 
 	if (height == -1) height = SeenBuff.Get_Height();
-	TacLeptonHeight = Pixel_To_Lepton(height - y);
+	TacLeptonHeight = Pixel_To_Lepton(height - y) * 4;
+
+	// Set our min/max viewport rectangle.
+	TacViewportRect.Clear();
+	int mapWidth = MapCellWidth * CELL_PIXEL_W;
+	int mapHeight = MapCellHeight * CELL_PIXEL_H;
+	TacViewportRect.AddPoint(0, 0); // Top Corner
+	TacViewportRect.AddPoint(mapWidth, mapHeight / 2);
+	TacViewportRect.AddPoint(-mapWidth, mapHeight / 2);
+	TacViewportRect.AddPoint(0, mapHeight);
+	{
+		TacViewportRect.X += (MapCellX * CELL_PIXEL_W);
+		TacViewportRect.Y += (MapCellY * CELL_PIXEL_H);
+		TacViewportRect.X2 += (MapCellX * CELL_PIXEL_W);
+		TacViewportRect.Y2 += (MapCellY * CELL_PIXEL_H);
+	}
+
+	if (cellDisplayCache == NULL) {
+		cellDisplayCache = new CellCache_t[MAP_CELL_W * MAP_CELL_H * 2];
+	}
+	numCachedDisplayCells = 0;
 
 	/*
 	**	Adjust the tactical cell if it is now in an invalid position
 	**	because of the changed dimensions.
 	*/
+// jmarshall - todo, this was a great feature, if the designer clampped the map and the starting point was outside, this essentially fixed that.
 	int xx = Coord_X(TacticalCoord) - (MapCellX * CELL_LEPTON_W);
 	int yy = Coord_Y(TacticalCoord) - (MapCellY * CELL_LEPTON_H);
-
-	Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, MapCellWidth * CELL_LEPTON_W, MapCellHeight * CELL_LEPTON_H);
-
+	//
+	//Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, MapCellWidth * CELL_LEPTON_W, MapCellHeight * CELL_LEPTON_H);
+	//
 	Set_Tactical_Position(XY_Coord(xx + (MapCellX * CELL_LEPTON_W), yy + (MapCellY * CELL_LEPTON_H)));
+// jmarshall end
 
 	TacPixelX = x;
 	TacPixelY = y;
@@ -870,8 +926,10 @@ CELL DisplayClass::Set_Cursor_Pos(CELL pos)
 	int x = Cell_X(pos + ZoneOffset);
 	int y = Cell_Y(pos + ZoneOffset);
 
-	if (x < Coord_XCell(TacticalCoord)) x = Coord_XCell(TacticalCoord);
-	if (y < Coord_YCell(TacticalCoord)) y = Coord_YCell(TacticalCoord);
+
+	// JJ TODO: This code appears to prevent object placement in the scenario editor when scrolled to the top of a large map 
+	//if (x < Coord_XCell(TacticalCoord)) x = Coord_XCell(TacticalCoord);
+	//if (y < Coord_YCell(TacticalCoord)) y = Coord_YCell(TacticalCoord);
 	if (x+w >= Coord_XCell(TacticalCoord) + Lepton_To_Cell(TacLeptonWidth)) x = Coord_XCell(TacticalCoord)+Lepton_To_Cell(TacLeptonWidth)-w;
 	if (y+h >= Coord_YCell(TacticalCoord) + Lepton_To_Cell(TacLeptonHeight)) y = Coord_YCell(TacticalCoord)+Lepton_To_Cell(TacLeptonHeight)-h;
 	pos = XY_Cell(x, y) - ZoneOffset;
@@ -1001,7 +1059,7 @@ void DisplayClass::Cursor_Mark(CELL pos, bool on)
 		CELL cell = pos + *ptr++;
 		if (In_Radar(cell)) {
 			cellptr = &(*this)[cell];
-			cellptr->Redraw_Objects();
+			cellptr->Redraw_Objects(true); // jmarshall: Force redraw all cursor tiles.
 			if (on) {
 				cellptr->IsCursorHere = true;
 			} else {
@@ -1020,7 +1078,7 @@ void DisplayClass::Cursor_Mark(CELL pos, bool on)
 			CELL cell = pos + *ptr++;
 			if (In_Radar(cell)) {
 				cellptr = &(*this)[cell];
-				cellptr->Redraw_Objects();
+				cellptr->Redraw_Objects(true);  // jmarshall: Force redraw all cursor tiles.
 			}
 		}
 	}
@@ -1063,7 +1121,6 @@ void DisplayClass::AI(KeyNumType & input, int x, int y)
 
 	MapClass::AI(input, x, y);
 }
-
 
 /***********************************************************************************************
  * DisplayClass::Submit -- Adds a game object to the map rendering system.                     *
@@ -1145,11 +1202,18 @@ void DisplayClass::Remove(ObjectClass const * object, LayerType layer)
  *=============================================================================================*/
 CELL DisplayClass::Click_Cell_Calc(int x, int y) const
 {
+	int tileX, tileY;	
+	if (!CellClass::ScreenCoordsToIsoTile(x, y, tileX, tileY)) {
+		return -1;
+	}
+	x = tileX * CELL_PIXEL_W;
+	y = tileY * CELL_PIXEL_H;
+
 	x -= TacPixelX;
 	x = Pixel_To_Lepton(x);
 	y -= TacPixelY;
 	y = Pixel_To_Lepton(y);
-
+	
 	// Possibly ignore the view constraints if we aren't using the internal renderer. ST - 8/5/2019 11:56AM
 	if (IgnoreViewConstraints || (unsigned)x < TacLeptonWidth && (unsigned)y < TacLeptonHeight) {
 		COORDINATE tcoord = XY_Coord(Pixel_To_Lepton(Lepton_To_Pixel(Coord_X(TacticalCoord))), Pixel_To_Lepton(Lepton_To_Pixel(Coord_Y(TacticalCoord))));
@@ -1189,54 +1253,65 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
 	**	If the distance is invalid then no further checking is required. Bail
 	**	with a no-can-do flag.
 	*/
+
+
 	if (distance == 0) return(false);
 	FacingType crude = Dir_Facing(facing);
-
-	if (Coord_X(TacticalCoord) == Cell_To_Lepton(MapCellX) && crude != FACING_W) {
-		if (crude == FACING_SW) facing = DIR_S;
-		if (crude == FACING_NW) facing = DIR_N;
-	}
-	if (Coord_Y(TacticalCoord) == Cell_To_Lepton(MapCellY) && crude != FACING_N) {
-		if (crude == FACING_NW) facing = DIR_W;
-		if (crude == FACING_NE) facing = DIR_E;
-	}
-	if (Coord_X(TacticalCoord) + TacLeptonWidth == Cell_To_Lepton(MapCellX+MapCellWidth) && crude != FACING_E) {
-		if (crude == FACING_NE) facing = DIR_N;
-		if (crude == FACING_SE) facing = DIR_S;
-	}
-	if (Coord_Y(TacticalCoord) + TacLeptonHeight == Cell_To_Lepton(MapCellY+MapCellHeight) && crude != FACING_S) {
-		if (crude == FACING_SE) facing = DIR_E;
-		if (crude == FACING_SW) facing = DIR_W;
-	}
 
 	/*
 	**	Determine the coordinate that it wants to scroll to.
 	*/
-	COORDINATE coord = Coord_Move(TacticalCoord, facing, distance);
+	//COORDINATE coord = Coord_Move(TacticalCoord, facing, distance);
+	static AdjancentWeight_t weights[FACING_COUNT];
+	weights[FACING_N].Set( -1, -1 );
+	weights[FACING_E].Set(1, -1);
+	weights[FACING_S].Set( 1, 1 );
+	weights[FACING_W].Set(-1, 1);
+
+	int neighborCellX = weights[crude].x * (distance * 0.4f);
+	int neighbotCellY = weights[crude].y * (distance * 0.4f);
+	DisplayTacticalCoord newCoord = TacticalCoord;
+	newCoord.AddPixelXY(neighborCellX, neighbotCellY);
+	
+	int sx = Lepton_To_Pixel(newCoord.GetX());
+	int sy = Lepton_To_Pixel(newCoord.GetY());
+	CellClass::ConvertCoordsToIsometric(sx, sy);
+	sy += (ScreenWidth / 4);
+	sy += ScreenHeight / 2;
+	if (!TacViewportRect.ContainsPoint(sx, sy)) {
+		return false;
+	}
+
+	COORDINATE coord = newCoord;
+
 
 	/*
 	**	Clip the new coordinate to the edges of the game world.
 	*/
-	int xx = (int)(short)Coord_X(coord) - (short)Cell_To_Lepton(MapCellX);
-	int yy = (int)(short)Coord_Y(coord) - (short)Cell_To_Lepton(MapCellY);
-	bool shifted = Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth), Cell_To_Lepton(MapCellHeight));
-	if (xx < 0) {
-		xx = 0;
-		shifted = true;
-	}
-	if (yy < 0) {
-		yy = 0;
-		shifted = true;
-	}
-	coord = XY_Coord(xx + Cell_To_Lepton(MapCellX), yy + Cell_To_Lepton(MapCellY));
+	//int xx = (int)(short)Coord_X(coord) - (short)Cell_To_Lepton(MapCellX);
+	//int yy = (int)(short)Coord_Y(coord) - (short)Cell_To_Lepton(MapCellY);
+	////if (!TacViewportRect.ContainsPoint(xx, yy)) {
+	////	return false;
+	////}
+	//
+	//bool shifted = true; // Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth) * 1.25, Cell_To_Lepton(MapCellHeight) * 1.25);	
+	//if (xx < 0) {
+	//	xx = 0;
+	//	shifted = true;
+	//}
+	//if (yy < 0) {
+	//	yy = 0;
+	//	shifted = true;
+	//}
+	//coord = XY_Coord(xx + Cell_To_Lepton(MapCellX), yy + Cell_To_Lepton(MapCellY));
 
 	/*
 	**	If the desired scroll was bound by the edge of the map, then adjust the distance to more accurately
 	**	reflect the actual distance moved.
 	*/
-	if (shifted) {
+	//if (shifted) {
 		distance = Distance(TacticalCoord, coord);
-	}
+	//}
 
 	/*
 	**	If the new coordinate is the same as the old, then no scrolling would occur.
@@ -1248,6 +1323,7 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
 	**	tactical map accordingly.
 	*/
 	if (really) {
+	//	Console_Printf("%d %d %d %d %d\n", neighborCellX, neighbotCellY, xx, yy, coord);
 		Set_Tactical_Position(coord);
 		IsToRedraw = true;
 		Flag_To_Redraw(false);
@@ -1831,7 +1907,72 @@ bool DisplayClass::Push_Onto_TacMap(COORDINATE & source, COORDINATE & dest)
  *=============================================================================================*/
 ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 {
+	int tileX, tileY;
+	CellClass::ScreenCoordsToIsoTile(x, y, tileX, tileY);
+	x = tileX * CELL_PIXEL_W;
+	y = tileY * CELL_PIXEL_H;
 	return(*this)[cell].Cell_Object(x, y);
+}
+
+void DisplayClass::CacheVisibleCells(void) {
+	IsShadowPresent = false;
+	numCachedDisplayCells = 0;
+	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
+		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
+			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
+			CELL cell = Coord_Cell(coord);
+			coord = Coord_Whole(Cell_Coord(cell));
+
+			/*
+			**	Only cells flagged to be redraw are examined.  
+			*/
+			int xpixel;
+			int ypixel;
+
+			if (Coord_To_Pixel(coord, xpixel, ypixel)) {
+				CellClass* cellptr = &(*this)[coord];
+				if ((cellptr->Is_Mapped(PlayerPtr) && cellptr->Is_Visible(PlayerPtr)) || Debug_Unshroud) {
+					cellptr->visibleFrame = g_startFrameTime;
+					cellptr->x_world_pos = xpixel;
+					cellptr->y_world_pos = ypixel;
+					cellptr->inShadow = false;
+					cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
+				}
+				else {
+					if (Cell_Shadow(cell, PlayerPtr) >= 0) {
+						cellptr->visibleFrame = g_startFrameTime;
+						cellptr->x_world_pos = xpixel;
+						cellptr->inShadow = true;
+						cellptr->y_world_pos = ypixel;
+						cellDisplayCache[numCachedDisplayCells++].ptr = cellptr;
+					}
+					IsShadowPresent = true;
+				}	
+
+				// If the tile is on screen then we need to create render coordinates for it even if it isn't rendered.
+				// This allows us to use these bits for things like movement and cell selection later on.
+				{
+					cellptr->x_screen_pos = xpixel;
+					cellptr->y_screen_pos = ypixel;
+					CellClass::ConvertCoordsToIsometric(cellptr->x_screen_pos, cellptr->y_screen_pos);
+					cellptr->lastRenderX = cellptr->x_screen_pos;
+					cellptr->lastRenderY = cellptr->y_screen_pos;
+
+					if (cellptr->x_screen_pos < -CELL_PIXEL_W || cellptr->y_screen_pos < -CELL_PIXEL_H)
+						continue;
+
+					int tileX = cellptr->x_screen_pos / CELL_PIXEL_W;
+					int tileY = cellptr->y_screen_pos / CELL_PIXEL_H;
+
+					if (tileX < MAP_CELL_W && tileY < MAP_CELL_H && tileX > 0 && tileY > 0)
+					{
+						Map.visibleCellTable[tileX][tileY].ptr = cellptr;
+						Map.visibleCellTable[tileX][tileY].lastFrameRendered = animFrameNum + 1;
+					}
+				}
+			}
+		}
+	}				
 }
 
 
@@ -1877,7 +2018,8 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 
 	MapClass::Draw_It(forced);
 
-	if (IsToRedraw || forced) {
+	GL_SetRenderTexture(sceneRenderTexture);
+	{
 		BStart(BENCH_TACTICAL);
 		IsToRedraw = false;
 
@@ -1929,268 +2071,20 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 		}
 
 		/*
-		**	Check for a movement of the tactical map. If there has been some
-		**	movement, then part (or all) of the icons must be redrawn.
+		** Record new map position for future reference.
 		*/
-		if (Lepton_To_Pixel(Coord_X(DesiredTacticalCoord)) != Lepton_To_Pixel(Coord_X(TacticalCoord)) ||
-			Lepton_To_Pixel(Coord_Y(DesiredTacticalCoord)) != Lepton_To_Pixel(Coord_Y(TacticalCoord))) {
-
-			int xmod = Lepton_To_Pixel(Coord_X(DesiredTacticalCoord));
-			int ymod = Lepton_To_Pixel(Coord_Y(DesiredTacticalCoord));
-
-			int oldx = Lepton_To_Pixel(Coord_X(TacticalCoord))-xmod;		// Old relative offset.
-			int oldy = Lepton_To_Pixel(Coord_Y(TacticalCoord))-ymod;
-
-			int oldw = Lepton_To_Pixel(TacLeptonWidth)-ABS(oldx);			// Replicable width.
-			int oldh = Lepton_To_Pixel(TacLeptonHeight)-ABS(oldy);		// Replicable height.
-
-			if (oldw < 1) forced = true;
-			if (oldh < 1) forced = true;
-
-
-#ifdef WIN32		//For WIN32 only redraw the edges of the map that move into view
-
-			/*
-			** Work out which map edges need to be redrawn
-			*/
-			BOOL redraw_right = (oldx < 0) ? true : false;		//Right hand edge
-			BOOL redraw_left  = (oldx > 0) ? true : false;		//Left hand edge
-			BOOL redraw_bottom= (oldy < 0) ? true : false;		//Bottom edge
-			BOOL redraw_top	= (oldy > 0) ? true : false;		//Top edge
-
-			/*
-			**	Blit any replicable block to avoid having to drawstamp.
-			*/
-			if (!forced && (oldw != Lepton_To_Pixel(TacLeptonWidth) || oldh != Lepton_To_Pixel(TacLeptonHeight))) {
-				Set_Cursor_Pos(-1);
-
-				/*
-				** If hid page is in video memory then blit from the seen page to avoid blitting
-				**  an overlapped region.
-				*/
-// jmarshall - removed
-//				if (HidPage.Get_IsDirectDraw()) {
-//					Hide_Mouse();
-//							SeenBuff.Blit(HidPage,
-//									((oldx < 0) ? -oldx : 0) +TacPixelX,
-//									((oldy < 0) ? -oldy : 0) +TacPixelY,
-//									((oldx < 0) ? 0 : oldx) +TacPixelX,
-//									((oldy < 0) ? 0 : oldy) +TacPixelY,
-//									oldw,
-//									oldh);
-//					Show_Mouse();
-//				} else {
-//					HidPage.Blit(HidPage,
-//									((oldx < 0) ? -oldx : 0) +TacPixelX,
-//									((oldy < 0) ? -oldy : 0) +TacPixelY,
-//									((oldx < 0) ? 0 : oldx) +TacPixelX,
-//									((oldy < 0) ? 0 : oldy) +TacPixelY,
-//									oldw,
-//									oldh);
-//				}
-// jmarshall - removed
-			} else {
-				forced = true;
-			}
-
-			if (oldx < 0) oldx = 0;
-			if (oldy < 0) oldy = 0;
-
-			/*
-			** Record new map position for future reference.
-			*/
-			ScenarioInit++;
-			Set_Tactical_Position(DesiredTacticalCoord);
-			ScenarioInit--;
-
-			if (!forced) {
-
-				/*
-				**
-				**	Set the 'redraw stamp' bit for any cells that could not be copied.
-				**
-				*/
-				int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-				int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-				oldw -= 24;
-				oldh -= 24;
-
-				if (abs(oldx) < 0x25 && abs(oldy) < 0x25) {
-
-					/*
-					** The width of the area we redraw depends on the scroll speed
-					*/
-					int extra_x = (abs(oldx)>=16) ? 2 : 1;
-					int extra_y = (abs(oldy)>=16) ? 2 : 1;
-
-					/*
-					** Flag the cells across the top of the visible area if required
-					*/
-					if (redraw_top) {
-						for (y = starty; y <= starty+CELL_PIXEL_H*extra_y; y += CELL_PIXEL_H) {
-							for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells across the bottom of the visible area if required
-					*/
-					if (redraw_bottom) {
-						for (y = Lepton_To_Pixel(TacLeptonHeight)-CELL_PIXEL_H*(1+extra_y); y <= Lepton_To_Pixel(TacLeptonHeight)+CELL_PIXEL_H*3; y += CELL_PIXEL_H) {
-							for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells down the left of the visible area if required
-					*/
-					if (redraw_left) {
-						for (x = startx; x <= startx + CELL_PIXEL_W*extra_x; x += CELL_PIXEL_W) {
-							for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-					/*
-					** Flag the cells down the right of the visible area if required
-					*/
-					if (redraw_right) {
-						for (x = Lepton_To_Pixel(TacLeptonWidth)-CELL_PIXEL_W*(extra_x+1); x <= Lepton_To_Pixel(TacLeptonWidth)+CELL_PIXEL_W*3; x += CELL_PIXEL_W) {
-							for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) (*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-
-				} else {
-
-					/*
-					**	Set the 'redraw stamp' bit for any cells that could not be copied.
-					*/
-					int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-					int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-					oldw -= 24;
-					oldh -= 24;
-					for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-						for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-							if (x <= oldx || x >= oldx+oldw || y <= oldy || y >= oldy+oldh) {
-								CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-											Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-								if (c > 0) {
-									(*this)[c].Redraw_Objects(true);
-								}
-							}
-						}
-					}
-				}
-			}
-
-		} else {
-
-			/*
-			**	Set the tactical coordinate just in case the desired tactical has changed but
-			**	not enough to result in any visible map change. This is likely to occur with very
-			**	slow scroll rates.
-			*/
-			ScenarioInit++;
-			if (DesiredTacticalCoord != TacticalCoord) {
-				Set_Tactical_Position(DesiredTacticalCoord);
-			}
-			ScenarioInit--;
-		}
-
-
-#else	//WIN32
-			/*
-			**	Blit any replicable block to avoid having to drawstamp.
-			*/
-			if (!forced && (oldw != Lepton_To_Pixel(TacLeptonWidth) || oldh != Lepton_To_Pixel(TacLeptonHeight))) {
-				Set_Cursor_Pos(-1);
-
-				HidPage.Blit(HidPage,
-								((oldx < 0) ? -oldx : 0) +TacPixelX,
-								((oldy < 0) ? -oldy : 0) +TacPixelY,
-								((oldx < 0) ? 0 : oldx) +TacPixelX,
-								((oldy < 0) ? 0 : oldy) +TacPixelY,
-								oldw,
-								oldh);
-			} else {
-				forced = true;
-			}
-
-			if (oldx < 0) oldx = 0;
-			if (oldy < 0) oldy = 0;
-
-			/*
-			** Record new map position for future reference.
-			*/
-			ScenarioInit++;
-			Set_Tactical_Position(DesiredTacticalCoord);
-			ScenarioInit--;
-
-			if (!forced) {
-
-				/*
-				**	Set the 'redraw stamp' bit for any cells that could not be copied.
-				*/
-				int startx = -Lepton_To_Pixel(Coord_XLepton(TacticalCoord));
-				int starty = -Lepton_To_Pixel(Coord_YLepton(TacticalCoord));
-				oldw -= 24;
-				oldh -= 24;
-				for (y = starty; y <= Lepton_To_Pixel(TacLeptonHeight)+((CELL_PIXEL_H*2)); y += CELL_PIXEL_H) {
-					for (x = startx; x <= Lepton_To_Pixel(TacLeptonWidth)+((CELL_PIXEL_W*2)); x += CELL_PIXEL_W) {
-						if (x <= oldx || x >= oldx+oldw || y <= oldy || y >= oldy+oldh) {
-							CELL c = Click_Cell_Calc(Bound(x, 0, Lepton_To_Pixel(TacLeptonWidth)-1) + TacPixelX,
-										Bound(y, 0, Lepton_To_Pixel(TacLeptonHeight)-1) + TacPixelY);
-
-							if (c > 0) {
-								(*this)[c].Redraw_Objects(true);
-							}
-						}
-					}
-				}
-			}
-
-		} else {
-
-			/*
-			**	Set the tactical coordinate just in case the desired tactical has changed but
-			**	not enough to result in any visible map change. This is likely to occur with very
-			**	slow scroll rates.
-			*/
-			ScenarioInit++;
-			if (DesiredTacticalCoord != TacticalCoord) {
-				Set_Tactical_Position(DesiredTacticalCoord);
-			}
-			ScenarioInit--;
-		}
-#endif
+		ScenarioInit++;
+		Set_Tactical_Position(DesiredTacticalCoord);
+		ScenarioInit--;
 
 		/*
 		**	If the entire tactical map is forced to be redrawn, then set all the redraw flags
 		**	and let the normal processing take care of the rest.
 		*/
-		if (forced) {
-			CellRedraw.Set();
-		}
+		CellRedraw.Set();
+
+		// Cache Visible cells 
+		CacheVisibleCells();
 
 		/*
 		**	The first order of business is to redraw all the underlying icons that are
@@ -2198,6 +2092,9 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 		*/
 		if (HidPage.Lock()) {
 			Redraw_Icons();
+
+			// Big Overlays come after tiles.
+			bigOverlayManager.Render();
 
 			/*
 			**	Draw the infantry bodies in this special layer.
@@ -2220,6 +2117,8 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 
 			HidPage.Unlock();
 		}
+
+		lightManager.RenderLights();
 
 #ifndef WIN32
 		/*
@@ -2261,7 +2160,12 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 //						continue;
 //					}
 					assert(ptr->IsActive);
-					ptr->Render(forced);
+// jmarshall - added a Is_Mapped check here so we don't see the trees through shrouded terrain.
+					CellClass* cellptr = &(*this)[ptr->Coord];
+					if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {
+						ptr->Render(forced);
+					}
+// jmarshall end
 				}
 			}
 			BEnd(BENCH_OBJECTS);
@@ -2281,14 +2185,6 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 			Layer[LAYER_GROUND][index]->IsToDisplay = false;
 		}
 #endif
-
-		/*
-		**	Draw the rubber band over the top of it all.
-		*/
-		if (IsRubberBand) {
-			LogicPage->Draw_Rect(BandX+TacPixelX, BandY+TacPixelY, NewX+TacPixelX, NewY+TacPixelY, WHITE);
-		}
-
 		/*
 		**	Clear the redraw flags so that normal redraw flag setting can resume.
 		*/
@@ -2304,14 +2200,48 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 		**	cell coordinates.
 		*/
 		if (Debug_Map && PendingObjectPtr) {
-			PendingObjectPtr->Coord = PendingObjectPtr->Class_Of().Coord_Fixup(Cell_Coord(ZoneCell + ZoneOffset));
+			COORDINATE coord = Cell_Coord(ZoneCell + ZoneOffset);
+			PendingObjectPtr->Coord = PendingObjectPtr->Class_Of().Coord_Fixup(coord);
 			PendingObjectPtr->Render(true);
+			
 		}
 #endif
 		BEnd(BENCH_TACTICAL);
 	}
+
+	/*
+	**	Draw the rubber band over the top of it all.
+	*/
+	if (IsRubberBand) {
+		LogicPage->Draw_Rect(BandX + TacPixelX, BandY + TacPixelY, NewX + TacPixelX, NewY + TacPixelY, WHITE);
+	}
+
+	GL_SetRenderTexture(NULL);
+
+	int renderTargetScale = ZoomLevel;
+	if(Debug_Map) {
+		renderTargetScale = 0;
+	}
+
+	double scale = ((((float)ScreenWidth / (float)ScreenHeight) * (float)renderTargetScale) * 0.05) + 1;
+
+	GL_RenderImage(sceneRenderTexture->GetColorImage(0), 0, 0, ScreenWidth * scale, ScreenHeight * scale, 0, 0, true, true);
 }
 
+void DisplayClass::Pixel_To_Zoom(int& x, int& y) const {
+	if(Debug_Map) {
+		return;
+	}
+
+	int renderTargetScale = ZoomLevel;
+	if (Debug_Map) {
+		renderTargetScale = 0;
+	}
+
+	double scale = ((((float)ScreenWidth / (float)ScreenHeight) * (float)renderTargetScale) * 0.05) + 1;
+	x = x / scale;
+	y = y / scale;
+}
 
 /***********************************************************************************************
  * DisplayClass::Redraw_Icons -- Draws all terrain icons necessary.                            *
@@ -2334,43 +2264,9 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
  *=============================================================================================*/
 void DisplayClass::Redraw_Icons(void)
 {
-	IsShadowPresent = false;
-	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
-		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
-			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
-			CELL cell = Coord_Cell(coord);
-			coord = Coord_Whole(Cell_Coord(cell));
-
-			/*
-			**	Only cells flagged to be redraw are examined.
-			*/
-			if (In_View(cell) && Is_Cell_Flagged(cell)) {
-				int xpixel;
-				int ypixel;
-
-				if (Coord_To_Pixel(coord, xpixel, ypixel)) {
-					CellClass * cellptr = &(*this)[coord];
-
-					/*
-					**	If there is a portion of the underlying icon that could be visible,
-					**	then draw it.  Also draw the cell if the shroud is off.
-					*/
-					//if (cellptr->IsMapped || Debug_Unshroud) {
-					if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {		// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						cellptr->Draw_It(xpixel, ypixel);
-					}
-
-					/*
-					**	If any cell is not fully mapped, then flag it so that the shadow drawing
-					**	process will occur.  Only draw the shadow if Debug_Unshroud is false.
-					*/
-					//if (!cellptr->IsVisible && !Debug_Unshroud) {
-					if (!cellptr->Is_Visible(PlayerPtr) && !Debug_Unshroud) {	// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						IsShadowPresent = true;
-					}
-				}
-			}
-		}
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos);
 	}
 }
 
@@ -2378,33 +2274,12 @@ void DisplayClass::Redraw_Icons(void)
 #ifdef SORTDRAW
 void DisplayClass::Redraw_OIcons(void)
 {
-	for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
-		for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
-			COORDINATE coord = Coord_Add(TacticalCoord, XY_Coord(x, y));
-			CELL cell = Coord_Cell(coord);
-			coord = Coord_Whole(Cell_Coord(cell));
-
-			/*
-			**	Only cells flagged to be redraw are examined.
-			*/
-			if (In_View(cell) && Is_Cell_Flagged(cell)) {
-				int xpixel;
-				int ypixel;
-
-				if (Coord_To_Pixel(coord, xpixel, ypixel)) {
-					CellClass * cellptr = &(*this)[coord];
-
-					/*
-					**	If there is a portion of the underlying icon that could be visible,
-					**	then draw it.  Also draw the cell if the shroud is off.
-					*/
-					//if (cellptr->IsMapped || Debug_Unshroud) {
-					if (cellptr->Is_Mapped(PlayerPtr) || Debug_Unshroud) {		// Use PlayerPtr since we won't be rendering in MP. ST - 3/6/2019 2:49PM
-						cellptr->Draw_It(xpixel, ypixel, true);
-					}
-				}
-			}
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		if (cellptr->inShadow) {
+			continue;
 		}
+		cellptr->Draw_It(cellptr->x_world_pos, cellptr->y_world_pos, true);
 	}
 }
 #endif
@@ -2428,6 +2303,7 @@ void DisplayClass::Redraw_OIcons(void)
  *=============================================================================================*/
 void DisplayClass::Redraw_Shadow(void)
 {
+	GL_EnableBlend(GL_BLEND_MULT);
 	if (IsShadowPresent) {
 		for (int y = -Coord_YLepton(TacticalCoord); y <= TacLeptonHeight; y += CELL_LEPTON_H) {
 			for (int x = -Coord_XLepton(TacticalCoord); x <= TacLeptonWidth; x += CELL_LEPTON_W) {
@@ -2443,31 +2319,36 @@ void DisplayClass::Redraw_Shadow(void)
 					int ypixel;
 
 					if (Coord_To_Pixel(coord, xpixel, ypixel)) {
+						CellClass::ConvertCoordsToIsometric(xpixel, ypixel);
+
 						CellClass * cellptr = &(*this)[coord];
 						//if (cellptr->IsVisible) continue;
 						if (cellptr->Is_Visible(PlayerPtr)) continue;		// Use PlayerPtr since we won't be rendering in MP. ST - 8/6/2019 10:44AM
 						int shadow = -2;
 						//if (cellptr->IsMapped) {
-						if (cellptr->Is_Mapped(PlayerPtr)) {					// Use PlayerPtr since we won't be rendering in MP. ST - 8/6/2019 10:44AM
-							shadow = Cell_Shadow(cell, PlayerPtr);				// Use PlayerPtr since we won't be rendering in MP. ST - 8/6/2019 10:44AM
+						if (cellptr->Is_Mapped(PlayerPtr)) {			
+							shadow = Cell_Shadow(cell, PlayerPtr);		
 						}
-						if (shadow >= 0) {
-							CC_Draw_Shape(ShadowShapes, shadow, xpixel, ypixel, WINDOW_TACTICAL, SHAPE_GHOST, NULL, ShadowTrans);
-						} else {
-							if (shadow != -1) {
-								int ww = CELL_PIXEL_W;
-								int hh = CELL_PIXEL_H;
 
-								if (Clip_Rect(&xpixel, &ypixel, &ww, &hh, Lepton_To_Pixel(TacLeptonWidth), Lepton_To_Pixel(TacLeptonHeight)) >= 0) {
-									LogicPage->Fill_Rect(TacPixelX+xpixel, TacPixelY+ypixel, TacPixelX+xpixel+ww-1, TacPixelY+ypixel+hh-1, BLACK);
-								}
-							}
+						int ww = CELL_PIXEL_W;
+						int hh = CELL_PIXEL_H;
+
+						//if (Clip_Rect(&xpixel, &ypixel, &ww, &hh, Lepton_To_Pixel(TacLeptonWidth), Lepton_To_Pixel(TacLeptonHeight)) >= 0) {
+						//	LogicPage->Fill_Rect(TacPixelX + xpixel, TacPixelY + ypixel, TacPixelX + xpixel + ww - 1, TacPixelY + ypixel + hh - 1, BLACK);
+						//}
+
+						if (shadow >= 0) {
+							CCGlobalShroudRender = true;
+							CC_DrawHD_Shape(ShadowShapes, shadow, xpixel, ypixel, WINDOW_TACTICAL, SHAPE_GHOST, NULL, ShadowTrans);
+							CCGlobalShroudRender = false;
 						}
 					}
 				}
 			}
 		}
 	}
+
+	GL_EnableBlend(GL_BLEND_NONE);
 }
 
 
@@ -2586,10 +2467,10 @@ COORDINATE DisplayClass::Pixel_To_Coord(int x, int y) const
 	*/
 	// Possibly ignore the view constraints if we aren't using the internal renderer. ST - 8/6/2019 10:47AM
 	//if ((unsigned)x < TacLeptonWidth && (unsigned)y < TacLeptonHeight) {
-	if (IgnoreViewConstraints || ((unsigned)x < TacLeptonWidth && (unsigned)y < TacLeptonHeight)) {
+	//if (IgnoreViewConstraints || ((unsigned)x < TacLeptonWidth && (unsigned)y < TacLeptonHeight)) {
 		return(Coord_Add(TacticalCoord, XY_Coord(x, y)));
-	}
-	return(0);
+	//}
+	//return(0);
 }
 
 
@@ -2851,15 +2732,11 @@ static bool should_exclude_from_selection(ObjectClass* obj)
 }
 
 void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool additive)
-{
-	COORDINATE tcoord = TacticalCoord;	//Cell_Coord(TacticalCell) & 0xFF00FF00L;
-
-	coord1 = Coord_Add(tcoord, coord1);
-	coord2 = Coord_Add(tcoord, coord2);
-	int x1 = Coord_X(coord1);
-	int x2 = Coord_X(coord2);
-	int y1 = Coord_Y(coord1);
-	int y2 = Coord_Y(coord2);
+{	
+	int x1 = Lepton_To_Pixel(Coord_X(coord1));
+	int x2 = Lepton_To_Pixel(Coord_X(coord2));
+	int y1 = Lepton_To_Pixel(Coord_Y(coord1));
+	int y2 = Lepton_To_Pixel(Coord_Y(coord2));
 
 	/*
 	**	Ensure that coordinate number one represents the upper left corner
@@ -2886,9 +2763,14 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 	AllowVoice = true;
 	for (int index = 0; index < Layer[LAYER_GROUND].Count(); index++) {
 		ObjectClass * obj = Layer[LAYER_GROUND][index];
-		COORDINATE ocoord = obj->Center_Coord();
-		int x = Coord_X(ocoord);
-		int y = Coord_Y(ocoord);
+		//COORDINATE ocoord = obj->Center_Coord();
+		int x = obj->GetRenderX();
+		int y = obj->GetRenderY();		
+
+		// Not on screen.
+		if (x == -1 && y == -1) {
+			continue;
+		}
 
 		/*
 		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
@@ -2914,9 +2796,13 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 	*/
 	for (int air_index = 0; air_index < Aircraft.Count(); air_index++) {
 		AircraftClass * aircraft = Aircraft.Ptr(air_index);
-		COORDINATE ocoord = aircraft->Center_Coord();
-		int x = Coord_X(ocoord);
-		int y = Coord_Y(ocoord);
+		//COORDINATE ocoord = aircraft->Center_Coord();
+		int x = aircraft->GetRenderX();
+		int y = aircraft->GetRenderY();
+		// Not on screen.
+		if (x == -1 && y == -1) {
+			continue;
+		}
 
 		/*
 		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
@@ -3098,15 +2984,31 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 	x = Get_Mouse_X();
 	y = Get_Mouse_Y();
 
-	bool edge = (y == 0 || x == 0 || x == SeenBuff.Get_Width()-1 || y == SeenBuff.Get_Height()-1);
-	COORDINATE coord = Map.Pixel_To_Coord(x, y);
-	CELL cell = Coord_Cell(coord);
+	Map.Pixel_To_Zoom(x, y);
+
+	int tileX = x / CELL_PIXEL_W;
+	int tileY = y / CELL_PIXEL_H;
+
+	if (tileX > MAP_CELL_W || tileY > MAP_CELL_H) {
+		return (GadgetClass::Action(0, key));
+	}
+
+	CellDisplayCache_t* cellcache = &Map.visibleCellTable[tileX][tileY];
+	if(animFrameNum > cellcache->lastFrameRendered || cellcache->ptr == NULL) {
+		return (GadgetClass::Action(0, key));
+	}
+	CELL cell = cellcache->ptr->Cell_Number();
+	COORDINATE coord = cellcache->ptr->Cell_Coord();
+
+	//cellcache->ptr->debug_select = g_startFrameTime;
+
+	bool edge = (y == 0 || x == 0 || x == SeenBuff.Get_Width() - 1 || y == SeenBuff.Get_Height() - 1);
 	if (coord) 
 	{
 		//shadow = (!Map[cell].IsMapped && !Debug_Unshroud);
 		shadow = (!Map[cell].Is_Mapped(PlayerPtr) && !Debug_Unshroud);		// Use PlayerPtr since we won't be rendering in MP. ST - 8/6/2019 10:49AM
-		x -= Map.TacPixelX;
-		y -= Map.TacPixelY;
+		//x -= Map.TacPixelX;
+		//y -= Map.TacPixelY;
 
 		/*
 		** Cause any displayed cursor to move along with the mouse cursor.
@@ -3119,7 +3021,7 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			object = Map.Close_Object(x, y);
 
 			/*
 			**	Special case check to ignore cloaked object if not allied with the player.
@@ -3346,7 +3248,10 @@ int DisplayClass::TacticalClass::Selection_At_Mouse(unsigned flags, KeyNumType &
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			int screenx = UserInput.Mouse.X;
+			int screeny = UserInput.Mouse.Y;
+			Map.Pixel_To_Zoom(screenx, screeny);
+			object = Map.Close_Object(screenx, screeny);
 		}
 
 		if (object != nullptr)
@@ -3425,7 +3330,10 @@ int DisplayClass::TacticalClass::Command_Object(unsigned flags, KeyNumType & key
 		**	Determine the object that the mouse is currently over.
 		*/
 		if (!shadow) {
-			object = Map.Close_Object(coord);
+			int screenx = UserInput.Mouse.X;
+			int screeny = UserInput.Mouse.Y;
+			Map.Pixel_To_Zoom(screenx, screeny);
+			object = Map.Close_Object(screenx, screeny);
 		}
 
 		if (CurrentObject.Count()) {
@@ -3469,7 +3377,7 @@ void DisplayClass::Mouse_Right_Press(void)
 		PendingObjectPtr = 0;
 		PendingObject = 0;
 		PendingHouse = HOUSE_NONE;
-		Set_Cursor_Shape(0);
+		//Set_Cursor_Shape(0);
 	} else {
 		if (IsRepairMode) {
 			IsRepairMode = false;
@@ -3856,7 +3764,6 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 		if (IsRubberBand) {
 			Refresh_Band();
 			Select_These(XYP_Coord(BandX, BandY), XYP_Coord(x, y));
-
 			Set_Default_Mouse(MOUSE_NORMAL, wsmall);
 			IsRubberBand = false;
 			IsTentative = false;
@@ -4210,15 +4117,16 @@ extern int GlyphXClientSidebarWidthInLeptons;
  *=============================================================================================*/
 void DisplayClass::Set_Tactical_Position(COORDINATE coord)
 {
+	COORDINATE inCoord = coord;
 	/*
 	**	Bound the desired location to fit the legal map edges.
 	*/
-	int xx = (int)Coord_X(coord) - (int)Cell_To_Lepton(MapCellX);
-	int yy = (int)Coord_Y(coord) - (int)Cell_To_Lepton(MapCellY);
+	int xx = (int)Coord_X(coord); // - (int)Cell_To_Lepton(MapCellX);
+	int yy = (int)Coord_Y(coord); // - (int)Cell_To_Lepton(MapCellY);
 
 //	Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth) + GlyphXClientSidebarWidthInLeptons, Cell_To_Lepton(MapCellHeight));		// Needed to accomodate Glyphx client sidebar. ST - 4/12/2019 5:29PM
-	Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth), Cell_To_Lepton(MapCellHeight));
-	coord = XY_Coord(xx + Cell_To_Lepton(MapCellX), yy + Cell_To_Lepton(MapCellY));
+	Confine_Rect(&xx, &yy, 0, 0, Cell_To_Lepton(MapCellWidth), Cell_To_Lepton(MapCellHeight));
+	coord = XY_Coord(xx, yy);
 
 	if (ScenarioInit) {
 		TacticalCoord = coord;
@@ -4514,40 +4422,16 @@ COORDINATE DisplayClass::Center_Map(COORDINATE center)
 	bool centerit = false;
 
 	if (CurrentObject.Count()) {
-
-		for (int index = 0; index < CurrentObject.Count(); index++) {
-			COORDINATE coord = CurrentObject[index]->Center_Coord();
-
-			x += Coord_X(coord);
-			y += Coord_Y(coord);
-		}
-
-		x /= CurrentObject.Count();
-		y /= CurrentObject.Count();
-		centerit = true;
+		center = CurrentObject[0]->Render_Coord();
 	}
 
-	if (center != 0L) {
-		x = Coord_X(center);
-		y = Coord_Y(center);
-		centerit = true;
-	}
+	// Not sure why the math works here with flipped lepton dimensions?
+	int xx = Coord_X(center) - (MapCellX * CELL_LEPTON_H);
+	int yy = Coord_Y(center) - (MapCellY * CELL_LEPTON_W);
 
-	if (centerit) {
-		center = XY_Coord(x, y);
+	Set_Tactical_Position(XY_Coord(xx, yy));
 
-		x = x - (int)TacLeptonWidth/2;
-		if (x < Cell_To_Lepton(MapCellX)) x = Cell_To_Lepton(MapCellX);
-
-		y = y - (int)TacLeptonHeight/2;
-		if (y < Cell_To_Lepton(MapCellY)) y = Cell_To_Lepton(MapCellY);
-
-		Set_Tactical_Position(XY_Coord(x, y));
-
-		return center;
-	}
-
-	return 0;
+	return center;
 }
 
 
@@ -4775,9 +4659,7 @@ void DisplayClass::Read_INI(CCINIClass & ini)
 	**	Set the starting position (do this after Init(), which clears the cells'
 	**	IsWaypoint flags).
 	*/
-	if (Scen.Waypoint[WAYPT_HOME] == -1) {
-		Scen.Waypoint[WAYPT_HOME] = XY_Cell(MapCellX + 5*RESFACTOR, MapCellY + 4*RESFACTOR);
-	}
+	Scen.Waypoint[WAYPT_HOME] = ini.Get_Int(name, "HomeCell");
 
 	Scen.Views[0] = Scen.Views[1] = Scen.Views[2] = Scen.Views[3] = Scen.Waypoint[WAYPT_HOME];
 	Set_Tactical_Position(Cell_Coord((Scen.Waypoint[WAYPT_HOME] - (MAP_CELL_W * 4 * RESFACTOR)) - (5*RESFACTOR)));
@@ -4845,6 +4727,7 @@ void DisplayClass::Write_INI(CCINIClass & ini)
 	ini.Put_Int(NAME, "Y", MapCellY);
 	ini.Put_Int(NAME, "Width", MapCellWidth);
 	ini.Put_Int(NAME, "Height", MapCellHeight);
+	ini.Put_Int(NAME, "HomeCell", Scen.Waypoint[WAYPT_HOME]);
 
 	/*
 	**	Save the Waypoint entries.
@@ -4929,6 +4812,35 @@ void DisplayClass::All_To_Look(HouseClass *house, bool units_only)
 				if (tech->What_Am_I() == RTTI_BUILDING && Rule.IsAllyReveal && tech->House->Is_Ally(house)) {
 					tech->Look();
 				}
+			}
+		}
+	}
+}
+
+
+void DisplayClass::FlagBigOverlayCells(BigOverlay* overlay, int screenx, int screeny) {
+	int width = overlay->GetImage()->width;
+	int height = overlay->GetImage()->height;
+
+	overlay->numOverlayedCells = 0;
+
+	for (int i = 0; i < numCachedDisplayCells; i++) {
+		CellClass* cellptr = cellDisplayCache[i].ptr;
+		
+		Rect rect;
+
+		rect.X = cellptr->x_screen_pos - CELL_PIXEL_W;
+		rect.Y = cellptr->y_screen_pos - height;
+		rect.X2 = rect.X + width;
+		rect.Y2 = rect.Y + height;
+		rect.Width = width;
+		rect.Height = height;
+
+		if(rect.ContainsPoint(screenx, screeny)) {
+			if(cellptr->bigOverlay == NULL)
+			{
+				cellptr->bigOverlay = overlay;
+				overlay->overlayedCells[overlay->numOverlayedCells++] = Cell_Coord(cellptr->Cell_Number());
 			}
 		}
 	}

@@ -5,6 +5,24 @@
 * Red Alert Vanilla Actions                                                                   *
 *=============================================================================================*/
 
+static int Script_ToggleFireSale(lua_State* L) {
+
+    int houseType = lua_tointeger(L, 1);
+    int fireSaleEnabled = lua_tointeger(L, 2);
+
+    if (houseType != HOUSE_NONE) {
+
+        HouseClass* this_house = HouseClass::As_Pointer((HousesType)houseType);
+
+        if (this_house != NULL) {
+            this_house->ToggleFireSaleAbility(fireSaleEnabled != 0);
+        }
+    }
+
+    return 1;
+}
+
+
 /***********************************************************************************************
  * Script_Win - The specified player wins                                                      *
  *                                                                                             *
@@ -312,8 +330,9 @@ static int Script_FireSale(lua_State* L) {
  *                                                                                             *
  *=============================================================================================*/
 static int Script_PlayMovie(lua_State* L) {
-    int ret = lua_tointeger(L, -1);
-    Play_Movie((VQType)ret);
+    //int ret = lua_tointeger(L, -1);
+    const char* movieName = lua_tostring(L, -1);
+    Play_Movie(movieName);
     return 1;
 }
 
@@ -947,7 +966,7 @@ static int Script_GiveSpecialWeapon(lua_State* L) {
 
         if (house->ID == houseType || houseType == -1) {
 
-            house->SuperWeapon[weaponType].Enable(TACTION_FULL_SPECIAL, true);
+            house->SuperWeapon[weaponType].Enable(false, true, false, true);
 
             if (immediate) {
                 house->SuperWeapon[weaponType].Forced_Charge(true);
@@ -5431,8 +5450,19 @@ static int Script_CreateVehicle(lua_State* L) {
 
     int objectIndex = lua_tointeger(L, 1);
     int houseType = lua_tointeger(L, 2);
-    int in_x = lua_tointeger(L, 3);
-    int in_y = lua_tointeger(L, 4);
+	int in_x = 0;
+	int in_y = 0;
+
+	COORDINATE coord;
+	if (lua_gettop(L) == 3) {
+		CELL cell = lua_tointeger(L, 3);
+		coord = Cell_Coord(cell);
+	}
+	else {
+		in_x = lua_tointeger(L, 3);
+		in_y = lua_tointeger(L, 4);
+		coord = Cell_Coord(XY_Cell(in_x, in_y));
+	}
 
     HouseClass* this_house = Houses.Ptr(houseType);
 
@@ -5444,7 +5474,7 @@ static int Script_CreateVehicle(lua_State* L) {
 
             bool new_unit_placed = false;
 
-            if (new_unit->Unlimbo(Cell_Coord(XY_Cell(in_x, in_y)))) {
+            if (new_unit->Unlimbo(coord)) {
 
                 new_unit_placed = true;
             }
@@ -5454,7 +5484,7 @@ static int Script_CreateVehicle(lua_State* L) {
             **	placement at the given location.
             */
             if (!new_unit_placed) {
-                CELL cell = Map.Nearby_Location(Cell_Coord(XY_Cell(in_x, in_y)), new_unit->Class->Speed);
+                CELL cell = Map.Nearby_Location(coord, new_unit->Class->Speed);
                 if (new_unit->Unlimbo(::Cell_Coord(cell))) {
                     new_unit_placed = true;
                 }
@@ -5508,8 +5538,19 @@ static int Script_CreateInfantry(lua_State* L) {
 
     int objectIndex = lua_tointeger(L, 1);
     int houseType = lua_tointeger(L, 2);
-    int in_x = lua_tointeger(L, 3);
-    int in_y = lua_tointeger(L, 4);
+    int in_x = 0;
+    int in_y = 0;
+    
+    COORDINATE coord;
+	if (lua_gettop(L) == 3) {
+        CELL cell = lua_tointeger(L, 3);
+        coord = Cell_Coord(cell);
+	}
+    else {
+        in_x = lua_tointeger(L, 3);
+        in_y = lua_tointeger(L, 4);
+        coord = Cell_Coord(XY_Cell(in_x, in_y));
+    }
 
     HouseClass* this_house = Houses.Ptr(houseType);
 
@@ -5521,7 +5562,7 @@ static int Script_CreateInfantry(lua_State* L) {
 
             bool new_unit_placed = false;
 
-            if (new_unit->Unlimbo(Cell_Coord(XY_Cell(in_x, in_y)), DIR_S)) {
+            if (new_unit->Unlimbo(coord, DIR_S)) {
 
                 new_unit_placed = true;
             }
@@ -5531,7 +5572,7 @@ static int Script_CreateInfantry(lua_State* L) {
             **	placement at the given location.
             */
             if (!new_unit_placed) {
-                CELL cell = Map.Nearby_Location(Cell_Coord(XY_Cell(in_x, in_y)), new_unit->Class->Speed);
+                CELL cell = Map.Nearby_Location(coord, new_unit->Class->Speed);
                 if (new_unit->Unlimbo(::Cell_Coord(cell), DIR_S)) {
                     new_unit_placed = true;
                 }
@@ -7596,6 +7637,8 @@ bool MapScript::Init(const char* mapName) {
 /**********************************************************************************************
 * Script Globals                                                                              *
 *=============================================================================================*/
+
+    lua_register(L, "ToggleFireSale", Script_ToggleFireSale);
 
     lua_pushnumber(L, PlayerPtr->ID);                                                // Local player (house) index
     lua_setglobal(L, "_localPlayer");

@@ -48,6 +48,7 @@
 #include	"il/ilu.h"
 #include	"image.h"
 #include    "texcache.h"
+#include    "vqamovie.h"
 
 #ifdef WINSOCK_IPX
 #include "WSProto.h"
@@ -68,6 +69,7 @@
 #include <vector>
 #include "HOUSECOLOR.H"
 #include "IMGUTIL.H"
+#include "bigoverlay.h"
 
 GLuint backbuffer_texture = -1;
 //byte* backbuffer_data;
@@ -79,8 +81,6 @@ SDL_Window* game_window;
 SDL_GLContext game_context;
 int OverlappedVideoBlits = 0;
 float animFrameNum = 0;
-
-extern std::vector<const ObjectClass*> renderedFrameObjects;
 
 bool renderConsole = false;
 
@@ -196,9 +196,11 @@ static bool Image_loadHDImage(Image_t *image, const char* name, int houseid, int
 	}
 
 	ILuint Width, Height, Bpp;
+	ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+
 	Width = ilGetInteger(IL_IMAGE_WIDTH);
 	Height = ilGetInteger(IL_IMAGE_HEIGHT);
-	Bpp = ilGetInteger(IL_IMAGE_BPP);
+	Bpp = ilGetInteger(IL_IMAGE_BPP);	
 	ILubyte* Data = ilGetData();
 
 	if (Bpp == 4 && houseid != -1) {
@@ -216,6 +218,25 @@ static bool Image_loadHDImage(Image_t *image, const char* name, int houseid, int
 			byte b = Data[(i * 4) + 2];
 			Data[(i * 4) + 2] = Data[(i * 4) + 0];
 			Data[(i * 4) + 0] = b;
+
+			if (Data[(i * 4) + 2] == 0 && Data[(i * 4) + 1] == 0 && Data[(i * 4) + 0] == 117) {
+				Data[(i * 4) + 3] = 0;
+			}
+
+			if (Data[(i * 4) + 2] == 117 && Data[(i * 4) + 1] == 0 && Data[(i * 4) + 0]) {
+				Data[(i * 4) + 3] = 0;
+			}
+		}
+	}
+	else if (Bpp == 3) {
+		for (int i = 0; i < Width * Height; i++) {
+			byte b = Data[(i * 3) + 2];
+			Data[(i * 3) + 2] = Data[(i * 4) + 0];
+			Data[(i * 3) + 0] = b;
+
+			if (Data[(i * 3) + 2] == 0 && Data[(i * 3) + 1] == 0 && Data[(i * 3) + 0] == 117) {
+				Data[(i * 3) + 3] = 0;
+			}
 		}
 	}
 
@@ -263,7 +284,7 @@ static bool Image_loadHDImage(Image_t *image, const char* name, int houseid, int
 	return true;
 }
 
-Image_t* Image_CreateBlankImage(const char* name, int width, int height) {
+Image_t* Image_CreateBlankImage(const char* name, int width, int height, bool hasAlpha) {
 	int64_t hash = generateHashValue(name, strlen(name));
 
 	int image_table_size = loaded_images.size();
@@ -285,10 +306,17 @@ Image_t* Image_CreateBlankImage(const char* name, int width, int height) {
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	if (hasAlpha)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	}
+	else
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 
 	strcpy(image->name, name);
@@ -302,7 +330,47 @@ Image_t* Image_CreateBlankImage(const char* name, int width, int height) {
 	return image;
 }
 
-void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t* palette) {
+Image_t* Image_CreateDepthImage(const char* name, int width, int height) {
+	int64_t hash = generateHashValue(name, strlen(name));
+
+	int image_table_size = loaded_images.size();
+	if (image_table_size > 0)
+	{
+		Image_t** image_table = &loaded_images[0];
+
+		// Check to see if the image is already loaded.
+		for (int i = 0; i < image_table_size; i++) {
+			if (image_table[i]->namehash == hash) {
+				return image_table[i];
+			}
+		}
+	}
+	Image_t* image = new Image_t();
+
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
+	strcpy(image->name, name);
+
+	image->HouseImages[0].image[0][0] = texture;
+	image->namehash = hash;
+	image->renderwidth[0] = image->width = width;
+	image->renderheight[0] = image->height = height;
+
+	loaded_images.push_back(image);
+	return image;
+}
+
+
+void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t* palette, bool hasAlpha) {
 	if (image->ScratchBuffer == NULL && paletteRebuild) {
 		image->ScratchBuffer = new uint8_t[image->width * image->height * 4];
 	}
@@ -311,9 +379,9 @@ void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t
 		for (int i = 0; i < image->width * image->height; i++) {
 			unsigned char c = data[i];
 			
-			unsigned char r = palette[(c * 3) + 0] << 2;
-			unsigned char g = palette[(c * 3) + 1] << 2;
-			unsigned char b = palette[(c * 3) + 2] << 2;
+			unsigned char r = palette[(c * 3) + 0];
+			unsigned char g = palette[(c * 3) + 1];
+			unsigned char b = palette[(c * 3) + 2];
 
 			image->ScratchBuffer[(i * 4) + 0] = r;
 			image->ScratchBuffer[(i * 4) + 1] = g;
@@ -323,7 +391,29 @@ void Image_UploadRaw(Image_t* image, uint8_t* data, bool paletteRebuild, uint8_t
 	}
 
 	glBindTexture(GL_TEXTURE_2D, image->HouseImages[0].image[0][0]);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, GL_RGBA, GL_UNSIGNED_BYTE, image->ScratchBuffer);
+
+	if (hasAlpha)
+	{
+		if (image->ScratchBuffer)
+		{
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, GL_RGBA, GL_UNSIGNED_BYTE, image->ScratchBuffer);
+		}
+		else
+		{
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+	}
+	else
+	{
+		if (image->ScratchBuffer)
+		{
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, GL_RGB, GL_UNSIGNED_BYTE, image->ScratchBuffer);
+		}
+		else
+		{
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->width, image->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+	}
 }
 
 Image_t* Image_LoadImage(const char* name, bool loadAnims, bool loadHouseColor) {
@@ -383,7 +473,7 @@ Image_t *Find_Image(const char* name) {
 	return NULL;
 }
 
-Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsigned char *data, unsigned char* remap) {
+Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsigned char *data, unsigned char* remap, unsigned char* ccpalete) {
 	int64_t hash = generateHashValue(name, strlen(name));
 
 	int image_table_size = loaded_images.size();
@@ -399,32 +489,104 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 		}
 	}
 
-	unsigned char* ccpalete = (unsigned char*)CCPalette.Get_Data();
+	if (ccpalete == NULL) {
+		if (CCGlobalOveridePalette) {
+			ccpalete = (unsigned char *)CCGlobalOveridePalette;
+		}
+		else {
+			ccpalete = (unsigned char*)CCPalette.Get_Data();
+		}
+	}
+
 
 	Image_t* image = new Image_t();
 	unsigned char *buffer = new unsigned char[Width * Height * 4];
 
 	for (int i = 0; i < Width * Height; i++) {
 		unsigned char c = data[i];
-		if (remap) {
+
+		unsigned char r = 0;
+		unsigned char g = 0;
+		unsigned char b = 0;
+		unsigned char a = 255;
+
+		// If C is zero then its 0% alpha. 
+		if (c == 0) {
+			buffer[(i * 4) + 0] = 0;
+			buffer[(i * 4) + 1] = 0;
+			buffer[(i * 4) + 2] = 0;
+			buffer[(i * 4) + 3] = 0;
+			continue;
+		}
+
+		if (CCGlobalShadowRender) {
+			buffer[(i * 4) + 0] = 120;
+			buffer[(i * 4) + 1] = 120;
+			buffer[(i * 4) + 2] = 120;
+			buffer[(i * 4) + 3] = 255;
+			
+			continue;
+		}
+		else if (CCGlobalOveridePalette && remap) {
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+
+			// Assume we are loading TS palettes.
+			if (c >= 0x10 && c <= 0x1f) {
+				float greyscale = r / 255.0f;
+
+				RGBClass remap = GetHSVHouseColor(HSVColors[CCPaletteHouseColor], c - 0x10);
+
+				r = remap.GetRawRed() << 2;
+				g = remap.GetRawGreen() << 2;
+				b = remap.GetRawBlue() << 2;
+			}
+		}
+		else if (remap) {
 			c = remap[c];
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+
+			// Red Alert 1 shadow support.
+			if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 128;
+			}
+		}
+		else
+		{
+			r = ccpalete[(c * 3) + 0] << 2;
+			g = ccpalete[(c * 3) + 1] << 2;
+			b = ccpalete[(c * 3) + 2] << 2;
+
+			// Red Alert 1 shadow support.
+			if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
+				r = 0;
+				g = 0;
+				b = 0;
+				a = 128;
+			}
 		}
 
-		unsigned char r = ccpalete[(c * 3) + 0] << 2;
-		unsigned char g = ccpalete[(c * 3) + 1] << 2;
-		unsigned char b = ccpalete[(c * 3) + 2] << 2;
-		unsigned char a = 0;
+		if (CCGlobalShroudRender) {
+			if (c != 254)
+			{
+				r = min(c * 2, 255);
+				g = min(c * 2, 255);
+				b = min(c * 2, 255);
+				a = 255;
+			}
+			else {
+				r = g = b = 0;
+				a = 0;
+			}
 
-		if ((r == 84 && g == 252 && b == 84) || (r == 0 && g == 168 && b == 0)) {
-			r = 0;
-			g = 0;
-			b = 0;			
-			a = 128;
-		}
-		else if (c != 0) {
-			a = 255;
-		}
 
+		}
 
 		buffer[(i * 4) + 0] = r;
 		buffer[(i * 4) + 1] = g;
@@ -453,9 +615,12 @@ Image_t* Image_CreateImageFrom8Bit(const char* name, int Width, int Height, unsi
 	return image;
 }
 
-void Image_Add8BitImage(Image_t *image, int HouseId, int ShapeID, int Width, int Height, unsigned char* data, unsigned char* remap) {	
+void Image_Add8BitImage(Image_t *image, int HouseId, int ShapeID, int Width, int Height, unsigned char* data, unsigned char* remap, unsigned char *palette) {	
 	unsigned char* buffer = new unsigned char[Width * Height * 4];
 	unsigned char* ccpalete = (unsigned char*)CCPalette.Get_Data();
+	if (palette) {
+		ccpalete = palette;
+	}
 
 	if (image->width != Width || image->height != Height) {
 		assert(!"Image_Add8BitImage: Invalid new dimensions!");
@@ -482,6 +647,19 @@ void Image_Add8BitImage(Image_t *image, int HouseId, int ShapeID, int Width, int
 			a = 255;
 		}
 
+		if(CCGlobalShroudRender) {
+			if (c != 254)
+			{
+				r = min(c * 2, 255);
+				g = min(c * 2, 255);
+				b = min(c * 2, 255);
+				a = 255;
+			}
+			else {
+				r = g = b = 0;
+				a = 0;
+			}
+		}
 
 		buffer[(i * 4) + 0] = r;
 		buffer[(i * 4) + 1] = g;
@@ -550,9 +728,7 @@ void ImGui_NewFrame(void) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui::NewFrame(show_oldframebuffer);
 
-	ImGui_ImplSDL2_NewFrame(game_window);
-
-	renderedFrameObjects.clear();
+	ImGui_ImplSDL2_NewFrame(game_window);	
 }
 
 void Device_Present(void) {	
@@ -771,6 +947,8 @@ void Create_Main_Window ( HANDLE instance , int command_show , int width , int h
 
 	ilInit();
 
+	GL_SetColor(1, 1, 1);
+
 	texCache.Init();
 
 	SDL_Init(SDL_INIT_VIDEO);
@@ -831,6 +1009,11 @@ void Create_Main_Window ( HANDLE instance , int command_show , int width , int h
 	io.Fonts->AddFontFromFileTTF("fonts/Arial.ttf", 16.0f);
 
 	ImGui_NewFrame();
+
+	VQA_Init();
+
+	lightManager.Init();
+	bigOverlayManager.Init();
 }
 
 
@@ -1302,4 +1485,23 @@ GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, long Si
 
 	file_handle.Close();
 	return pic;
+}
+
+/*
+================
+Sys_Milliseconds
+================
+*/
+int Sys_Milliseconds(void) {
+	int sys_curtime;
+	static int sys_timeBase;
+	static bool	initialized = false;
+
+	if (!initialized) {
+		sys_timeBase = timeGetTime();
+		initialized = true;
+	}
+	sys_curtime = timeGetTime() - sys_timeBase;
+
+	return sys_curtime;
 }

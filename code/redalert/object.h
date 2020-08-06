@@ -55,6 +55,8 @@ class TriggerClass;
 class ObjectClass : public AbstractClass
 {
 	public:
+		int lastRenderTime;
+
 		/*
 		**	The object can be in one of two states -- placed down on the map, or not. If the
 		**	object is placed down on the map, then this flag will be true.
@@ -180,7 +182,7 @@ class ObjectClass : public AbstractClass
 		virtual COORDINATE Sort_Y(void) const;
 		virtual FireDataType Fire_Data(int which) const;
 		virtual COORDINATE Fire_Coord(int which) const;
-		virtual COORDINATE Exit_Coord(void) const;
+		virtual COORDINATE Exit_Coord(void) const;		
 
 		/*
 		**	Object entry and exit from the game system.
@@ -208,6 +210,9 @@ class ObjectClass : public AbstractClass
 		virtual void Look(bool incremental=false);
 		virtual bool Mark(MarkType=MARK_CHANGE);
 
+		virtual void SetRenderXY(int x, int y);
+		int GetRenderX() const { return renderX; }
+		int GetRenderY() const { return renderY; }
 	private:
 		virtual void Mark_For_Redraw(void);
 
@@ -265,10 +270,12 @@ class ObjectClass : public AbstractClass
 		#ifdef CHEAT_KEYS
 		virtual void Debug_Dump(MonoClass *mono) const;
 		#endif
-		virtual void Move(FacingType);
+		virtual void Move(FacingType);		
 
 		enum {FLIGHT_LEVEL=256};
-
+	private:
+		int renderX;
+		int renderY;
 };
 
 #endif

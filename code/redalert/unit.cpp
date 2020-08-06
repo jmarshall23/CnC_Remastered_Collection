@@ -2200,7 +2200,7 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window) const
 	if (Flagged != HOUSE_NONE) {
 		shapefile = MFCD::Retrieve("FLAGFLY.SHP");
 		int flag_x = x + (ICON_PIXEL_W / 2) - 2;
-		int flag_y = y + (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
+		int flag_y = y + (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile, 0);
 		CC_Draw_Shape(this, "FLAGFLY", shapefile, Frame % 14, flag_x, flag_y, window, SHAPE_CENTER|SHAPE_FADING|SHAPE_GHOST, HouseClass::As_Pointer(Flagged)->Remap_Table(false, Class->Remap), Map.UnitShadow, DIR_N, 0x0100, Flagged);
 	}
 
@@ -3188,6 +3188,10 @@ MoveType UnitClass::Can_Enter_Cell(CELL cell, FacingType ) const
 	CellClass const * cellptr = &Map[cell];
 
 	if ((unsigned)cell >= MAP_CELL_TOTAL) return(MOVE_NO);
+
+	if (cellptr->bigOverlay != NULL) {
+		return MOVE_NO;
+	}
 
 	/*
 	**	Moving off the edge of the map is not allowed unless

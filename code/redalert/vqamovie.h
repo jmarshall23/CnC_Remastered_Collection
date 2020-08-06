@@ -3,10 +3,6 @@
 
 #pragma once
 
-extern "C" {
-	#include "../external/libsmacker/smacker.h"
-};
-
 typedef enum {
 	FMV_IDLE,
 	FMV_PLAY,			// play
@@ -17,23 +13,37 @@ typedef enum {
 	FMV_ID_WAIT
 } cinStatus_t;
 
-struct _VQAHandle {
+#pragma pack(push,8)
+typedef struct {
+	int					imageWidth, imageHeight;	// will be a power of 2
+	struct Image_t*		image;						// RGBA format, alpha will be 255
+	uint8_t*			rawbuffer;
+	int					status;
+} cinData_t;
+#pragma pop
+
+class _VQAHandle {
+public:
 	_VQAHandle();
 	~_VQAHandle();
 
-	GraphicBufferClass*		video_graphics_buffer;
+	// returns false if it failed to load
+	virtual bool		InitFromFile(const char* qpath, bool looping) = 0;
 
-	unsigned long			width;
-	unsigned long			height;
-	unsigned long			frame_count;
-	unsigned char			track_mask;
-	unsigned char			channels[7];
-	unsigned char			bitdepth[7];
-	unsigned long			audio_rate[7];
+	// returns the length of the animation in milliseconds
+	virtual int			AnimationLength() = 0;
 
-	smk						smacker_video;
+	// the pointers in cinData_t will remain valid until the next UpdateForTime() call
+	virtual cinData_t	ImageForTime(int milliseconds) = 0;
+
+	// closes the file and frees all allocated memory
+	virtual void		Close() = 0;
+
+	// closes the file and frees all allocated memory
+	virtual void		ResetTime(int time) = 0;
 };
 
+void VQA_Init(void);
 long  VQA_Play(_VQAHandle* vqaHandle);
 void  VQA_Close(_VQAHandle* vqaHandle);
 void  VQA_Free(_VQAHandle* vqaHandle);

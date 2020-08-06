@@ -41,7 +41,7 @@ DropListClass::DropListClass(int id, char * text, int max_len, TextPrintType fla
 	IsDropped(false),
 	ListHeight(h),
 	DropButton(0, down, x+w, y),
-	List(0, x, y+Get_Build_Frame_Height(down), w+Get_Build_Frame_Width(down), h, flags, up, down)
+	List(0, x, y+Get_Build_Frame_Height(down, 0), w+Get_Build_Frame_Width(down, 0), h, flags, up, down)
 {
 	Fancy_Text_Print("", 0, 0, 0, 0, flags);
 	EditClass::Height = FontHeight+1;
@@ -189,7 +189,7 @@ DropListClass::DropListClass(DropListClass const & list) :
 void DropListClass::Set_Position(int x, int y)
 {
 	EditClass::Set_Position(x, y);
-	List.Set_Position(x, y + Get_Build_Frame_Height(DropButton.Get_Shape_Data()));
+	List.Set_Position(x, y + Get_Build_Frame_Height(DropButton.Get_Shape_Data(), 0));
 	DropButton.Set_Position(x + Width, y);
 }
 

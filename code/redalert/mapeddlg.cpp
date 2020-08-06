@@ -93,9 +93,12 @@ int MapEditClass::New_Scenario(void)
 				player = SCEN_PLAYER_GREECE;
 				break;
 
-			default:
 			case HOUSE_USSR:
 				player = SCEN_PLAYER_USSR;
+				break;
+
+			default:
+				player = SCEN_PLAYER_MPLAYER;
 				break;
 		}
 	}
@@ -166,20 +169,21 @@ int MapEditClass::New_Scenario(void)
 //	Init_Clear();
 	Fill_In_Data();
 
-	/*
-	**	Prompt for map size
-	*/
-	Size_Map(-1, -1, 30, 30);
+	MapCellX = 95 - 45 - 1;
+	MapCellY = 75 - 25 - 1;
+	MapCellWidth = 124 - 95 + 1;
+	MapCellHeight = 104 - 75 + 1;
 
 	/*
 	**	Set the Home & Reinforcement Cells to the center of the map
 	*/
 	Scen.Waypoint[WAYPT_REINF] = XY_Cell(MapCellX + MapCellWidth / 2, MapCellY + MapCellHeight / 2);
-	Scen.Waypoint[WAYPT_HOME] = XY_Cell(MapCellX + MapCellWidth / 2, MapCellY + MapCellHeight / 2);
+	Scen.Waypoint[WAYPT_HOME] = XY_Cell(MapCellX - MapCellWidth / 2, MapCellY - MapCellHeight / 2);
+	TacticalCoord = Cell_Coord(Scen.Waypoint[WAYPT_HOME]);
 	(*this)[TacticalCoord].IsWaypoint = 1;
 	Flag_Cell(Coord_Cell(TacticalCoord));
 
-	Set_Tactical_Position(Cell_Coord(Scen.Waypoint[WAYPT_HOME] - (MAP_CELL_W * 4 * RESFACTOR) - (5 * RESFACTOR)));
+	Set_Tactical_Position(Cell_Coord(Scen.Waypoint[WAYPT_HOME]));
 	ScenarioInit--;
 
 	return(0);
@@ -1176,6 +1180,8 @@ int MapEditClass::Size_Map(int x, int y, int w, int h)
 	if (Cell_Y(Scen.Waypoint[WAYPT_HOME]) > MapCellY + MapCellHeight - 1) {
 		Scen.Waypoint[WAYPT_HOME] = XY_Cell(Cell_X(Scen.Waypoint[WAYPT_HOME]), MapCellY + MapCellHeight - 1);
 	}
+
+	Set_View_Dimensions(0, 0);
 
 	return(0);
 }

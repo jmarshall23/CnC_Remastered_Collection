@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<Tilesets>
+	<TilesetTypeClass name="RA_Structures">
+		<RootTexturePath>Red_Alert\Structures</RootTexturePath>
+		<Tiles>
+			
+		</Tiles>		
+	</TilesetTypeClass>
+</Tilesets>

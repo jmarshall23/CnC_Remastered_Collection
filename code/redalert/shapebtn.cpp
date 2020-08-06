@@ -110,8 +110,8 @@ void ShapeButtonClass::Set_Shape(void const * data)
 {
 	ShapeData = data;
 	if (ShapeData) {
-		Width = Get_Build_Frame_Width(ShapeData);
-		Height = Get_Build_Frame_Height(ShapeData);
+		Width = Get_Build_Frame_Width(ShapeData, 0);
+		Height = Get_Build_Frame_Height(ShapeData, 0);
 	}
 }
 

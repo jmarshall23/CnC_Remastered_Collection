@@ -419,8 +419,7 @@ void AircraftTypeClass::One_Time(void)
 		*/
 		char buffer[_MAX_FNAME];
 		sprintf(buffer, "%sICON", uclass.Graphic_Name());
-		_makepath(fullname, NULL, NULL, buffer, ".SHP");
-		((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
+		((Image_t*&)uclass.CameoData) = LoadCameoImage(buffer);
 
 		/*
 		**	Generic shape for all houses load method.
@@ -545,12 +544,8 @@ void AircraftTypeClass::Prep_For_Add(void)
 void AircraftTypeClass::Display(int x, int y, WindowNumberType window, HousesType ) const
 {
 	int shape = 0;
-	void const * ptr = Get_Cameo_Data();
-	if (ptr == NULL) {
-		ptr = Get_Image_Data();
-		shape = 5;
-	}
-	CC_Draw_Shape(ptr, shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
+	Image_t *ptr = Get_Cameo_Data();
+	CC_DrawHD_Shape(ptr, shape, x, y, window, SHAPE_CENTER|SHAPE_WIN_REL);
 }
 #endif
 
