@@ -728,7 +728,7 @@ unsigned long VersionClass::Max_Version(void)
 char const * Version_Name(void) {
 // jmarshall
 	#define AF_BUILDNUMBER 0 // Patch number for allied force.
-	#define EA_REMASTER_PATCH 2 // What version of the remaster source we are integrated with.
+	#define EA_REMASTER_PATCH 3 // What version of the remaster source we are integrated with.
 
 	static char tmp[512];
 #ifdef _DEBUG

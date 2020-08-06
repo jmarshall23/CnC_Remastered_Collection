@@ -1027,6 +1027,16 @@ void MapClass::Logic(void)
 	**	Tiberium cells that can grow or spread.
 	*/
 	int subcount = MAP_CELL_TOTAL / (Rule.GrowthRate * TICKS_PER_MINUTE);
+
+	/*
+	** Use the Tiberium setting as a multiplier on growth rate. ST - 7/1/2020 3:05PM
+	*/
+	if (Session.Type == GAME_GLYPHX_MULTIPLAYER) {
+		if (Session.Options.Tiberium > 1) {
+			subcount *= Session.Options.Tiberium;
+		}
+	}		 
+
 	subcount = max(subcount, 1);
 	int index;
 	for (index = TiberiumScan; index < MAP_CELL_TOTAL; index++) {
@@ -1675,7 +1685,7 @@ int MapClass::Zone_Span(CELL cell, int zone, MZoneType check)
  * HISTORY:                                                                                    *
  *   10/05/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType check, bool checkflagged) const
+CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType check, bool checkflagged, int locationmod) const
 {
 	CELL topten[10];
 	int count = 0;
@@ -1759,7 +1769,7 @@ CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType c
 	}
 
 	if (count > 0) {
-		return(topten[Frame % count]);
+		return(topten[(Frame+locationmod) % count]);
 	}
 	return(0);
 }
