@@ -81,11 +81,11 @@ void GL_RenderLine(int x1, int y1, int x2, int y2, int r, int g, int b, float th
 void GL_RenderImage(Image_t* image, int x, int y, int width, int height, int colorRemap, int shapeId, bool ignoreOutOfScreenPixels, bool flipUV) {
 	if (!ignoreOutOfScreenPixels)
 	{
-		if (x < 0 || y < 0) {
+		if (x + width < 0 || y + height < 0) {
 			return;
 		}
 
-		if (x >= ScreenWidth || y >= ScreenHeight) {
+		if (x - width >= ScreenWidth || y - height >= ScreenHeight) {
 			return;
 		}
 	}
