@@ -5799,6 +5799,16 @@ int HouseClass::AI_Building(void)
 			}
 		}
 
+		if (BQuantity[STRUCT_RADAR] == 0) {
+			b = &BuildingTypeClass::As_Reference(STRUCT_RADAR);
+			if (Can_Build(b, ActLike) && (b->Cost_Of() < money || hasincome)) {
+				choiceptr = BuildChoice.Alloc();
+				if (choiceptr != NULL) {
+					*choiceptr = BuildChoiceClass(URGENCY_MEDIUM, b->Type);
+				}
+			}
+		}
+
 		/*
 		**	Build some air defense.
 		*/
